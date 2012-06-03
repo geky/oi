@@ -1,16 +1,16 @@
-#ifndef UD_OS_H
-#define UD_OS_H
+#ifndef OI_OS
+#define OI_OS
 
 #if defined(_WIN32) || defined(__WIN32__)
-	#define UD_WIN
+	#define OI_WIN
 #elif defined(linux) || defined(__linux)
-	#define UD_LINUX
+	#define OI_LINUX
 #elif defined(__APPLE__) || defined(MACOSX) || defined(macintosh) || defined(Macintosh)
-	#define UD_MAC
+	#define OI_MAC
 #elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
-	#define UD_FreeBSD
+	#define OI_FreeBSD
 #else
-	#error Unknown OS
+	#error oi does not recognize OS
 #endif
 #endif
 

@@ -1,9 +1,9 @@
-#ifndef UD_TIME_H
-#define UD_TIME_H
-#include "ud_os.h"
-#include "ud_types.h"
+#ifndef OI_TIME
+#define OI_TIME
+#include "oi_os"
+#include "oi_types"
 
-#ifdef UD_WIN
+#ifdef OI_WIN
 
 #include<windows.h>
 

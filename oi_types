@@ -12,8 +12,8 @@
 // float64
 //
 
-#ifndef UD_TYPES_H
-#define UD_TYPES_H
+#ifndef OI_TYPES
+#define OI_TYPES
 
 typedef signed char int8;
 typedef unsigned char uint8;

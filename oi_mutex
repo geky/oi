@@ -1,9 +1,9 @@
-#ifndef UD_MUTEX_H
-#define UD_MUTEX_H
+#ifndef OI_MUTEX
+#define OI_MUTEX
 
-#include "ud_os.h"
+#include "oi_os"
 
-#ifdef UD_WIN
+#ifdef OI_WIN
 
 typedef CRITICAL_SECTION mutex_t;
 

@@ -1,11 +1,11 @@
-#ifndef UD_THREAD_H
-#define UD_THREAD_H
+#ifndef OI_THREAD
+#define OI_THREAD
 
-#include "ud_os.h"
-#include "ud_types.h"
+#include "oi_os"
+#include "oi_types"
 
 
-#ifdef UD_WIN
+#ifdef OI_WIN
 
 #include<windows.h>
 #include<process.h>
