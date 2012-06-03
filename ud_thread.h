@@ -9,7 +9,7 @@
 //
 // int thread_sleep(uint32 millis)
 //
-// int thread_yeild()
+// int thread_yield()
 //
 // int thread_terminate(thread_t thread)
 //
@@ -36,7 +36,7 @@ typedef HANDLE thread_t;
 
 #define thread_join(thread) \
 
-#define thread_yeild() \
+#define thread_yield() \
         (Sleep(0),0)
 
 #define thread_terminate(thread) \
@@ -80,16 +80,16 @@ typedef pthread_t thread_t;
 #define thread_sleep(millis) \
         _ud_thread_sleep(millis)
 
-#define thread_yeild() \
-        pthread_yeild()
+#define thread_yield() \
+        sched_yield()
 
 #define thread_terminate(thread) \
 	pthread_cancel(thread)
 
 void * _ud_thread_handler(void * args) {
-	//pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
-	//((void(**)(void*))args)[0](((void**)args)[1]);
-	//free(args);
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
+	((void(**)(void*))args)[0](((void**)args)[1]);
+	free(args);
 	return 0;
 }
 
