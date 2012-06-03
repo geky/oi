@@ -29,11 +29,11 @@ static inline int thread_create(thread_t * t, void (*r)(void*), void * a) {
 
 
 static inline int thread_delete(thread_t * t) {
-	return !CloseHandle(&t);
+	return !CloseHandle(*t);
 }
 
 static inline int thread_join(thread_t * t)  {
-	return WaitForSingleObject(&t,INFINITE) != WAIT_OBJECT_0;
+	return WaitForSingleObject(*t,INFINITE) != WAIT_OBJECT_0;
 }
 
 static inline int thread_yield() {
@@ -42,7 +42,7 @@ static inline int thread_yield() {
 }
 
 static inline int thread_terminate(thread_t * t) {
-	return !TerminateThread(&t, 0);
+	return !TerminateThread(*t, 0);
 }
 
 
@@ -72,7 +72,7 @@ static inline int thread_delete() {
 }
 
 static inline int thread_join(thread) {
-	return pthread_join(thread,0);
+	return pthread_join(*thread,0);
 }
 
 static inline int thread_yield() {
@@ -80,7 +80,7 @@ static inline int thread_yield() {
 }
 
 static inline int thread_terminate(thread) {
-	return pthread_cancel(thread);
+	return pthread_cancel(*thread);
 }
 
 
