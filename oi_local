@@ -8,8 +8,8 @@
 typedef DWORD local_t;
 
 static inline int local_create(local_t * i) {
-	i = TlsAlloc();
-	return i == -1;
+	*i = TlsAlloc();
+	return *i == -1;
 }
 
 static inline int local_destroy(local_t * i) {
