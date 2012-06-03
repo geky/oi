@@ -1,9 +1,3 @@
-//
-// uint64 millis()
-//
-// int sleep(int millis)
-//
-
 #ifndef UD_TIME_H
 #define UD_TIME_H
 #include "ud_os.h"
@@ -13,13 +7,7 @@
 
 #include<windows.h>
 
-#define millis() \
-      	_ud_millis()
-
-#define sleep(millis) \
-        (Sleep(millis),0)
-
-uint64 _ud_millis() {
+static inline uint64 millis(void) {
     FILETIME temp;
     GetSystemTimeAsFileTime(&temp);
     uint64 ret = temp.dwHighDateTime;
@@ -28,18 +16,17 @@ uint64 _ud_millis() {
     return (ret/10000) - 11644473600000ULL; 
 }
 
+static inline int sleep(unsigned int millis) {
+	Sleep(millis);
+	return 0;	
+}
+
 #else
 
 #include <pthread.h>
 #include <sys/time.h>
 
-#define millis() \
-      	_ud_millis()
-
-#define sleep(millis) \
-        _ud_sleep(millis)
-
-uint64 _ud_millis() {
+static inline uint64 millis(void) {
     struct timeval temp;
     gettimeofday(&temp,0);
     uint64 ret = temp.tv_sec;
@@ -48,7 +35,7 @@ uint64 _ud_millis() {
     return ret;
 }
 
-int _ud_sleep(unsigned int millis) {
+static inline int sleep(unsigned int millis) {
     struct timespec time;
     uint64 timems = millis();
     timems += millis;

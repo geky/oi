@@ -1,17 +1,3 @@
-//
-// mutex_t
-//
-// int mutex_create(mutex_t *);
-//
-// int mutex_destroy(mutex_t);
-//
-// int mutex_lock(mutex_t);
-//
-// int mutex_try_lock(mutex_t);
-//
-// int mutex_unlock(mutex_t);
-//
-
 #ifndef UD_MUTEX_H
 #define UD_MUTEX_H
 
@@ -21,20 +7,29 @@
 
 typedef CRITICAL_SECTION mutex_t;
 
-#define mutex_create(mutex) \
-        (InitializeCriticalSection(mutex),0)
+static inline int mutex_create(mutex_t * m) {
+	InitializeCriticalSection(m);
+	return 0;
+}
 
-#define mutex_destroy(mutex) \
-        (DeleteCriticalSection(&(mutex)),0)
+static inline int mutex_destroy(mutex_t * m) {
+	DeleteCriticalSection(m);
+	return 0;
+}
 
-#define mutex_lock(mutex) \
-        (EnterCriticalSection(&(mutex)),0)
+static inline int mutex_lock(mutex_t * m) \
+	EnterCriticalSection(m);
+	return 0;
+}
 
-#define mutex_try_lock(mutex) \
-        !TryEnterCriticalSection(&(mutex))
+static inline int mutex_try_lock(mutex_t * m) {
+	return !TryEnterCriticalSection(m);
+}
 
-#define mutex_unlock(mutex) \
-        (LeaveCriticalSection(&(mutex)),0)
+static inline int mutex_unlock(mutex_t * m) {
+	LeaveCriticalSection(m)
+	return 0;
+}
 
 
 #else
@@ -42,28 +37,28 @@ typedef CRITICAL_SECTION mutex_t;
 
 typedef pthread_mutex_t mutex_t;
 
-#define mutex_create(mutex) \
-        _ud_mutex_init(mutex)
-
-#define mutex_destroy(mutex) \
-        pthread_mutex_destroy(&(mutex))
-
-#define mutex_lock(mutex) \
-        pthread_mutex_lock(&(mutex))
-
-#define mutex_try_lock(mutex) \
-        pthread_mutex_trylock(&(mutex))
-
-#define mutex_unlock(mutex) \
-        pthread_mutex_unlock(&(mutex))
-
-int _ud_mutex_init(mutex_t * m) {
+static inline int mutex_create(mutex_t * m) {
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
     return pthread_mutex_init(mutex,&attr);
 }
 
+static inline int mutex_destroy(mutex_t * m) {
+	return pthread_mutex_destroy(m);
+}
+
+static inline int mutex_lock(mutex_t * m) {
+	return pthread_mutex_lock(m);
+}
+
+static inline int mutex_try_lock(mutex_t * m) {
+	return pthread_mutex_trylock(m);
+}
+
+static inline int mutex_unlock(mutex_t * m) \
+	return pthread_mutex_unlock(m);
+}
 
 #endif
 
