@@ -34,7 +34,7 @@ static inline int local_create(local_t * i) {
 }
 
 static inline int local_destroy(local_t * i) {
-	return pthread_delete(*i);
+	return pthread_key_delete(*i);
 }
 
 static inline int local_set(local_t * i, void * val) {
