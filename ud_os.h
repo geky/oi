@@ -1,14 +1,13 @@
-#ifndef UD_OS_H
-#define UD_OS_H
+#if !(defined(UD_WIN) || defined(UD_LINUX) || defined(UD_MAC) || defined(UD_FreeBSD))
 
 #if defined(_WIN32) || defined(__WIN32__)
-	#define WIN_UD
+	#define UD_WIN
 #elif defined(linux) || defined(__linux)
-	#define LINUX_UD
+	#define UD_LINUX
 #elif defined(__APPLE__) || defined(MACOSX) || defined(macintosh) || defined(Macintosh)
-	#define MAC_UD
+	#define UD_MAC
 #elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
-	#define FreeBSD_UD
+	#define UD_FreeBSD
 #else
 	#error Unknown OS
 #endif
