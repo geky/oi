@@ -71,16 +71,16 @@ static inline int thread_delete() {
 	return 0;
 }
 
-static inline int thread_join(thread) {
-	return pthread_join(*thread,0);
+static inline int thread_join(thread_t * t) {
+	return pthread_join(*t,0);
 }
 
 static inline int thread_yield() {
 	return sched_yield();
 }
 
-static inline int thread_terminate(thread) {
-	return pthread_cancel(*thread);
+static inline int thread_terminate(thread_t * t) {
+	return pthread_cancel(*t);
 }
 
 

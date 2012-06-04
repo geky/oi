@@ -16,8 +16,8 @@ static inline uint64 millis(void) {
     return (ret/10000) - 11644473600000ULL; 
 }
 
-static inline int sleep(unsigned int millis) {
-	Sleep(millis);
+static inline int sleep(unsigned int ms) {
+	Sleep(ms);
 	return 0;	
 }
 
@@ -35,10 +35,9 @@ static inline uint64 millis(void) {
     return ret;
 }
 
-static inline int sleep(unsigned int millis) {
+static inline int sleep(unsigned int ms) {
     struct timespec time;
-    uint64 timems = millis();
-    timems += millis;
+    uint64 timems = millis() + ms;
     time.tv_nsec = (timems%1000) * 1000;
     time.tv_sec = timems / 1000;
     
