@@ -45,8 +45,7 @@ typedef HANDLE thread_t;
 
 
 static unsigned int __stdcall _ud_thread_handler(void * args) {
-	if (!args) _endthreadex(0);
-        ((void(**)(void*))args)[0](((void**)args)[1]);
+	((void(**)(void*))args)[0](((void**)args)[1]);
 	free(args);
 	_endthreadex(0);
 	return 0;
@@ -54,6 +53,7 @@ static unsigned int __stdcall _ud_thread_handler(void * args) {
 
 int _ud_thread_init(thread_t * t, void (*r)(void*), void * a) {
 	void ** mem = malloc(sizeof r + sizeof a);
+	if (!mem) return 1;
 	mem[0] = r;  mem[1] = a;
 	*t = (thread_t)_beginthreadex(0,0,&_ud_thread_handler,mem,0,0);
 	return !*t;
@@ -63,6 +63,8 @@ int _ud_thread_init(thread_t * t, void (*r)(void*), void * a) {
 
 #else
 
+#include <pthread.h>
+#include <stdlib.h>
 
 typedef pthread_t thread_t;
 
@@ -85,17 +87,17 @@ typedef pthread_t thread_t;
 	pthread_cancel(thread)
 
 void * _ud_thread_handler(void * args) {
-	if (!args) return 0;
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
-	((void(**)(void*))args)[0](((void**)args)[1]);
-	free(args);
+	//pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
+	//((void(**)(void*))args)[0](((void**)args)[1]);
+	//free(args);
 	return 0;
 }
 
 int _ud_thread_init(thread_t * t, void (*r)(void*), void * a) {
 	void ** mem = malloc(sizeof r + sizeof a);
+	if (!mem) return 1;
 	mem[0] = r;  mem[1] = a;
-	return pthread_create(thread,0,&_ud_thread_handler,mem);
+	return pthread_create(t,0,&_ud_thread_handler,mem);
 }
 
 

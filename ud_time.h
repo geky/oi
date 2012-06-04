@@ -30,6 +30,9 @@ uint64 _ud_millis() {
 
 #else
 
+#include <pthread.h>
+#include <sys/time.h>
+
 #define millis() \
       	_ud_millis()
 
@@ -37,7 +40,7 @@ uint64 _ud_millis() {
         _ud_sleep(millis)
 
 uint64 _ud_millis() {
-    timeval temp;
+    struct timeval temp;
     gettimeofday(&temp,0);
     uint64 ret = temp.tv_sec;
     ret *= 1000;
@@ -46,11 +49,11 @@ uint64 _ud_millis() {
 }
 
 int _ud_sleep(unsigned int millis) {
-    timespec time;
+    struct timespec time;
     uint64 timems = millis();
     timems += millis;
-    till.tv_nsec = (timems%1000) * 1000;
-    time.tv_sec = timeme / 1000;
+    time.tv_nsec = (timems%1000) * 1000;
+    time.tv_sec = timems / 1000;
     
     pthread_mutex_t mutex;
     pthread_cond_t cond;
@@ -58,7 +61,7 @@ int _ud_sleep(unsigned int millis) {
     pthread_cond_init(&cond,0);
     
     pthread_mutex_lock(&mutex);
-    pthread_cond_timedwait(&cond,&mutex,&ti);
+    pthread_cond_timedwait(&cond,&mutex,&time);
     pthread_mutex_unlock(&mutex);
     
     pthread_cond_destroy(&cond);
