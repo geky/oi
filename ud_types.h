@@ -8,6 +8,12 @@
 // int64
 // uint64
 //
+// float32
+// float64
+//
+
+#ifndef UD_TYPES_H
+#define UD_TYPES_H
 
 typedef signed char int8;
 typedef unsigned char uint8;
@@ -24,3 +30,7 @@ typedef signed long long int64;
 typedef unsigned long long uint64;
 #endif
 
+typedef float float32;
+typedef double float64;
+
+#endif

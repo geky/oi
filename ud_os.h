@@ -1,4 +1,5 @@
-#if !(defined(UD_WIN) || defined(UD_LINUX) || defined(UD_MAC) || defined(UD_FreeBSD))
+#ifndef UD_OS_H
+#define UD_OS_H
 
 #if defined(_WIN32) || defined(__WIN32__)
 	#define UD_WIN
