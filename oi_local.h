@@ -3,7 +3,7 @@
 #include "oi_os.h"
 
 #ifdef OI_WIN
-#include "windows.h"
+#include <windows.h>
 
 typedef DWORD local_t;
 
