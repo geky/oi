@@ -3,6 +3,9 @@
 
 #if defined(_WIN32) || defined(__WIN32__)
 	#define OI_WIN
+        #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+        #endif
 #elif defined(linux) || defined(__linux)
 	#define OI_LINUX
 #elif defined(__APPLE__) || defined(MACOSX) || defined(macintosh) || defined(Macintosh)

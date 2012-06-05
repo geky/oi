@@ -3,6 +3,7 @@
 #include "oi_os.h"
 
 #ifdef OI_WIN
+#include "windows.h"
 
 typedef CRITICAL_SECTION mutex_t;
 
@@ -16,7 +17,7 @@ static inline int mutex_destroy(mutex_t * m) {
 	return 0;
 }
 
-static inline int mutex_lock(mutex_t * m) \
+static inline int mutex_lock(mutex_t * m) {
 	EnterCriticalSection(m);
 	return 0;
 }
@@ -26,7 +27,7 @@ static inline int mutex_try_lock(mutex_t * m) {
 }
 
 static inline int mutex_unlock(mutex_t * m) {
-	LeaveCriticalSection(m)
+	LeaveCriticalSection(m);
 	return 0;
 }
 
