@@ -19,7 +19,7 @@ static unsigned int __stdcall _ud_thread_handler(void * args) {
 }
 
 static inline int thread_create(thread_t * t, void (*r)(void*), void * a) {
-	void ** mem = malloc(sizeof r + sizeof a);
+	void ** mem = (void**)malloc(sizeof r + sizeof a);
 	if (!mem) return 1;
 	mem[0] = r;  mem[1] = a;
 	*t = (thread_t)_beginthreadex(0,0,&_ud_thread_handler,mem,0,0);
