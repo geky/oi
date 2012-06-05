@@ -33,7 +33,7 @@ static inline int mutex_unlock(mutex_t * m) {
 
 
 #else
-
+#include <pthread.h>
 
 typedef pthread_mutex_t mutex_t;
 
@@ -41,7 +41,7 @@ static inline int mutex_create(mutex_t * m) {
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-    return pthread_mutex_init(mutex,&attr);
+    return pthread_mutex_init(m,&attr);
 }
 
 static inline int mutex_destroy(mutex_t * m) {
@@ -56,7 +56,7 @@ static inline int mutex_try_lock(mutex_t * m) {
 	return pthread_mutex_trylock(m);
 }
 
-static inline int mutex_unlock(mutex_t * m) \
+static inline int mutex_unlock(mutex_t * m) {
 	return pthread_mutex_unlock(m);
 }
 

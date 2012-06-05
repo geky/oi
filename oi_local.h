@@ -25,7 +25,7 @@ static inline void * local_get(local_t * i) {
 }
 
 #else
-
+#include <pthread.h>
 
 typedef pthread_key_t local_t;
 
