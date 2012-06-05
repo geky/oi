@@ -1,7 +1,6 @@
 #ifndef OI_MUTEX
 #define OI_MUTEX
-
-#include "oi_os"
+#include "oi_os.h"
 
 #ifdef OI_WIN
 

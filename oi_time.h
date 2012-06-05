@@ -1,7 +1,7 @@
 #ifndef OI_TIME
 #define OI_TIME
-#include "oi_os"
-#include "oi_types"
+#include "oi_os.h"
+#include "oi_types.h"
 
 #ifdef OI_WIN
 

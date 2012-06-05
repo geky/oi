@@ -1,7 +1,6 @@
 #ifndef OI_LOCAL
 #define OI_LOCAL
-
-#include "oi_os"
+#include "oi_os.h"
 
 #ifdef OI_WIN
 

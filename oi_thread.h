@@ -1,8 +1,7 @@
 #ifndef OI_THREAD
 #define OI_THREAD
-
-#include "oi_os"
-#include "oi_types"
+#include "oi_os.h"
+#include "oi_types.h"
 
 
 #ifdef OI_WIN
