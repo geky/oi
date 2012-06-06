@@ -4,7 +4,6 @@
 #include "oi_types.h"
 
 #ifdef OI_WIN
-#include<windows.h>
 
 static inline uint64 millis(void) {
     FILETIME temp;

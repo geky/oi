@@ -3,7 +3,6 @@
 #include "oi_os.h"
 
 #ifdef OI_WIN
-#include <windows.h>
 
 typedef CRITICAL_SECTION mutex_t;
 

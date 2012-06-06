@@ -6,6 +6,7 @@
 	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
 	#endif
+        #include <windows.h>
 #elif defined(linux) || defined(__linux)
 	#define OI_LINUX
 	#ifndef _XOPEN_SOURCE
