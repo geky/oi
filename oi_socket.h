@@ -6,7 +6,7 @@
 #ifdef OI_WIN
 #include <winsock2.h>
 #else
-
+#include <sys/socket.h>
 #endif
 
 #define SOCKET_UDP SOCK_DGRAM
@@ -28,13 +28,18 @@ static inline int address_create(address_t * a, uint32 ip, uint16 port) {
 typedef SOCKET socket_t;
 
 static inline int socket_create(socket_t * s, int proto, int block) {
-    *s = socket(AF_INET, proto, 0);
-    u_long blockval = block ? 0 : 1;
-    return ioctlsocket(s,FIONBIO,&blockval) || (s != -1);
+	WSADATA data;
+	u_long blockval = block?0:1;
+	if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
+    if ((*s=socket(AF_INET, proto,0))==-1) return 2;
+	if (ioctlsocket(s,FIONBIO,&blockval)) return 3;
+    return 0;
 }
 
 static inline int socket_destroy(socket_t * s) {
-    return closesocket(s);
+    if(closesocket(s)) return 1;
+	if(WSACleanup()) return 2;
+	return 0;
 }
 
 #else
@@ -53,15 +58,29 @@ static inline int socket_destroy(socket_t * s) {
 
 #endif
 
-static inline int socket_bind(socket_t) {
-    
+static inline int socket_bind(socket_t * s, address_t * a) {
+	return bind(*s,a,sizeof a);    
 }
 
-static inline int socket_send(socket_t * s, void * buf, size_t len, address_t * a) {
+static inline int socket_conect(socket_t * s, address_t * a) {
+	return connect(*s,a,sizeof a);
+}
+
+static inline int socket_send(socket_t * s, void * buf, size_t len) {
+    return send(*s,buf,len,0) == -1;
+}
+
+static inline int socket_send_to(socket_t * s, void * buf, size_t len, address_t * a) {
     return sendto(*s,buf,len,0,a,sizeof address_t) == -1;
 }
 
-static inline int socket_recv(socket_t * s, void * buf, size_t len, address_t * a, size_t * inlen) {
+static inline int socket_rec(socket_t * s, void * buf, size_t len, address_t * a, size_t * inlen) {
+    ssize_t rsize = recv(*s,buf,len);
+    if (rsize >= 0) *inlen = rsize;
+    return rsize < 0;
+}
+
+static inline int socket_rec_from(socket_t * s, void * buf, size_t len, address_t * a, size_t * inlen) {
     ssize_t rsize = recvfrom(*s,buf,len,a,sizeof address_t);
     if (rsize >= 0) *inlen = rsize;
     return rsize < 0;
