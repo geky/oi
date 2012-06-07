@@ -2,6 +2,8 @@
 #define OI_TIME
 #include "oi_os.h"
 #include "oi_types.h"
+//
+#include <stdio.h>
 
 #ifdef OI_WIN
 
@@ -36,10 +38,10 @@ static inline uint64 millis(void) {
 static inline int sleep(unsigned int ms) {
     struct timespec time;
     uint64 timems = millis() + ms;
-    time.tv_nsec = (timems%1000) * 1000;
+    time.tv_nsec = (timems%1000) * 1000000;
     time.tv_sec = timems / 1000;
-    
-    pthread_mutex_t mutex;
+	
+	pthread_mutex_t mutex;
     pthread_cond_t cond;
     pthread_mutex_init(&mutex,0);
     pthread_cond_init(&cond,0);
