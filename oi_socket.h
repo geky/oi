@@ -1,16 +1,24 @@
+// for windows use -lws2_32
+
 #ifndef OI_SOCKET
 #define OI_SOCKET
 #include "oi_os.h"
 #include "oi_types.h"
 
 #ifdef OI_WIN
-#include <winsock2.h>
+#include <winsock2.h> 
 #define WSAGetLastError() errno;
 #else
 #include <sys/socket.h>
 #include <string.h>
 #include <fcntl.h>
 #endif
+
+#define ADDRESS_ANY       INADDR_ANY
+#define ADDRESS_lOOPBACK  INADDR_LOOPBACK
+#define ADDRESS_BROADCAST INADDR_BROADCAST
+#define ADDRESS_NONE      INADDR_NONE
+
 
 typedef struct sockaddr address_t;
 
@@ -26,6 +34,7 @@ static inline int address_create(address_t * a, uint32 ip, uint16 port) {
 #define SOCKET_UDP SOCK_DGRAM
 #define SOCKET_TCP SOCK_STREAM
 
+
 #ifdef OI_WIN
 
 typedef SOCKET socket_t;
@@ -35,12 +44,12 @@ static inline int socket_create(socket_t * s, int proto, int block) {
 	u_long blockval = block?0:1;
 	if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
     if ((*s=socket(AF_INET, proto,0))==-1) return 2;
-	if (ioctlsocket(s,FIONBIO,&blockval)) return 3;
+	if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
     return 0;
 }
 
 static inline int socket_destroy(socket_t * s) {
-    if(closesocket(s)) return 1;
+    if(closesocket(*s)) return 1;
 	if(WSACleanup()) return 2;
 	return 0;
 }

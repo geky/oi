@@ -1,3 +1,5 @@
+// for linux use -pthread for sleep
+
 #ifndef OI_TIME
 #define OI_TIME
 #include "oi_os.h"

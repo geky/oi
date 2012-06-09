@@ -1,3 +1,5 @@
+// for linux use -pthread
+
 #ifndef OI_THREAD
 #define OI_THREAD
 #include "oi_os.h"
