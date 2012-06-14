@@ -9,30 +9,31 @@
 #ifdef OI_WIN
 #include<process.h>
 
-typedef HANDLE thread_t;
+typedef struct {
+	HANDLE i;
+	void (*func)(void*);
+	void * data;
+} thread_t;
 
 static unsigned int __stdcall _ud_thread_handler(void * args) {
-	((void(**)(void*))args)[0](((void**)args)[1]);
-	free(args);
+	(*((thread_t*)args)->func)(((thread_t*)args)->data);
 	_endthreadex(0);
 	return 0;
 }
 
 static inline int thread_create(thread_t * t, void (*r)(void*), void * a) {
-	void ** mem = (void**)malloc(sizeof r + sizeof a);
-	if (!mem) return 1;
-	mem[0] = r;  mem[1] = a;
-	*t = (thread_t)_beginthreadex(0,0,&_ud_thread_handler,mem,0,0);
-	return !*t;
+	t->func = r;
+	t->data = a;
+	t->i = (HANDLE)_beginthreadex(0,0,&_ud_thread_handler,t,0,0);
+	return !t->i;
 }
 
-
 static inline int thread_delete(thread_t * t) {
-	return !CloseHandle(*t);
+	return !CloseHandle(t->i);
 }
 
 static inline int thread_join(thread_t * t)  {
-	return WaitForSingleObject(*t,INFINITE) != WAIT_OBJECT_0;
+	return WaitForSingleObject(t->i,INFINITE) != WAIT_OBJECT_0;
 }
 
 static inline int thread_yield() {
@@ -41,7 +42,7 @@ static inline int thread_yield() {
 }
 
 static inline int thread_terminate(thread_t * t) {
-	return !TerminateThread(*t, 0);
+	return !TerminateThread(t->i, 0);
 }
 
 
@@ -50,20 +51,22 @@ static inline int thread_terminate(thread_t * t) {
 #include <pthread.h>
 #include <stdlib.h>
 
-typedef pthread_t thread_t;
+typedef struct {
+	pthread_t i;
+	void (*func)(void*);
+	void * data;
+} thread_t;
 
 void * _ud_thread_handler(void * args) {
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
-	((void(**)(void*))args)[0](((void**)args)[1]);
-	free(args);
+	(*((thread_t*)args)->func)(((thread_t*)args)->data);
 	return 0;
 }
 
 static inline int thread_create(thread_t * t, void (*r)(void*), void * a) {
-	void ** mem = malloc(sizeof r + sizeof a);
-	if (!mem) return 1;
-	mem[0] = r;  mem[1] = a;
-	return pthread_create(t,0,&_ud_thread_handler,mem);
+	t->func = f;
+	t->data = a;
+	return pthread_create(&t->i,0,&_ud_thread_handler,t);
 }
 
 static inline int thread_delete() {
@@ -71,7 +74,7 @@ static inline int thread_delete() {
 }
 
 static inline int thread_join(thread_t * t) {
-	return pthread_join(*t,0);
+	return pthread_join(t->i,0);
 }
 
 static inline int thread_yield() {
@@ -79,7 +82,7 @@ static inline int thread_yield() {
 }
 
 static inline int thread_terminate(thread_t * t) {
-	return pthread_cancel(*t);
+	return pthread_cancel(t->i);
 }
 
 
