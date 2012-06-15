@@ -20,7 +20,7 @@
 #define ADDRESS_NONE      INADDR_NONE
 
 
-typedef struct sockaddr address_t;
+typedef	struct sockaddr_storage address_t;
 
 static inline int address_create(address_t * a, uint32 ip, uint16 port) {
 	a->sa_family = AF_INET;
@@ -30,22 +30,23 @@ static inline int address_create(address_t * a, uint32 ip, uint16 port) {
     return 0;
 }
 
+#define SOCKET_IPV4 AF_INET
+#define SOCKET_IPV6 AF_INET6
 
 #define SOCKET_UDP SOCK_DGRAM
 #define SOCKET_TCP SOCK_STREAM
-
 
 #ifdef OI_WIN
 
 typedef SOCKET socket_t;
 
-static inline int socket_create(socket_t * s, int proto, int block) {
+static inline int socket_create(socket_t * s, int addr, int proto, int block) {
 	WSADATA data;
 	u_long blockval = block?0:1;
 	if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
-    if ((*s=socket(AF_INET, proto,0))==-1) return 2;
+    if ((*s=socket(addr, proto,0))==-1) return 2;
 	if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
-    return 0;
+    RETURN 0;
 }
 
 static inline int socket_destroy(socket_t * s) {
@@ -58,8 +59,8 @@ static inline int socket_destroy(socket_t * s) {
 
 typedef int socket_t;
 
-static inline int socket_create(socket_t * s, int proto, int block) {
-    *s = socket(AF_INET, proto, 0);
+static inline int socket_create(socket_t * s, int addr, int proto, int block) {
+    *s = socket(addr, proto, 0);
     if (block) fcntl(*s, F_SETFL, fcntl(*s, F_GETFL)&~O_NONBLOCK);
     return *s != -1;
 }
