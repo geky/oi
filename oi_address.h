@@ -23,18 +23,26 @@ typedef	union {
 	struct sockaddr_in6 ipv6;
 } address_t;
 
-static inline int address_4_create(address_t * a, uint32 ip, uint16 port) {
+static inline int ipv4_address_create(address_t * a, unsigned char * ip, uint16 port) {
 	a->ipv4.sin_family = AF_INET;
 	a->ipv4.sin_port = htons(port);
-	a->ipv4.sin_address = (struct in_addr)htonl(ip);
+	if (ip) a->ipv4.sin_address = *(struct in_addr *)ip;
 	return 0;
 }
 
-static inline int address_6_create(address_t * a, uint32 ip, uint16 port) {
+static inline int ipv4_address_create(address_t * a, char * s) {
+	return inet_pton(AF_INET,s,&a->ipv4.sin_addr) != -1;
+}
+
+static inline int ipv6_address_create(address_t * a, unsigned char * ip, uint16 port) {
 	a->ipv6.sin_family = AF_INET6;
 	a->ipv6.sin_port = htons(port);
-	a->ipv4.sin_address = (struct in_addr6)htonl(ip);
+	if (ip) a->ipv4.sin_address = *(struct in_addr6 *)ip;
 	return 0;
+}
+
+static inline int ipv6_address_create(address_t * a, char * s) {
+	return inet_pton(AF_INET6,s,&a->ipv6.sin_addr) != -1;
 }
 
 #endif
