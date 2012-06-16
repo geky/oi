@@ -2,33 +2,12 @@
 
 #ifndef OI_SOCKET
 #define OI_SOCKET
-#include "oi_os.h"
-#include "oi_types.h"
+#include "oi_address.h"
 
 #ifdef OI_WIN
-#include <winsock2.h> 
 #define WSAGetLastError() errno;
 #else
-#include <sys/socket.h>
-#include <string.h>
-#include <fcntl.h>
 #endif
-
-#define ADDRESS_ANY       INADDR_ANY
-#define ADDRESS_lOOPBACK  INADDR_LOOPBACK
-#define ADDRESS_BROADCAST INADDR_BROADCAST
-#define ADDRESS_NONE      INADDR_NONE
-
-
-typedef	struct sockaddr_storage address_t;
-
-static inline int address_create(address_t * a, uint32 ip, uint16 port) {
-	a->sa_family = AF_INET;
-	*(uint16*)(a->sa_data)  = htons(port);
-	*(uint32*)(a->sa_data+2)= htonl(ip);
-    memset(a->sa_data+6,0,8);
-    return 0;
-}
 
 #define SOCKET_IPV4 AF_INET
 #define SOCKET_IPV6 AF_INET6
@@ -72,17 +51,17 @@ static inline int socket_destroy(socket_t * s) {
 #endif
 
 static inline int socket_bind(socket_t * s, address_t * a) {
-	return bind(*s,a,sizeof(address_t));    
+	return bind(*s,(sockaddr*)a,sizeof(address_t));    
 }
 
 static inline int tcp_connect(socket_t * s, address_t * a) {
-	return connect(*s,a,sizeof(address_t));
+	return connect(*s,(sockaddr*)a,sizeof(address_t));
 }
 
 static inline int tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
 	int na_s = sizeof(address_t);
 	if (listen(*s,5)) return 2;
-	*ns = accept(*s,na,&na_s);
+	*ns = accept(*s,(sockaddr*)na,&na_s);
 	return (*ns == -1);
 }
 
@@ -97,12 +76,12 @@ static inline int tcp_rec(socket_t * s, void * buf, size_t len, size_t * inlen) 
 }
 
 static inline int udp_send(socket_t * s, void * buf, size_t len, address_t * a) {
-    return sendto(*s,buf,len,0,a,sizeof(address_t)) == -1;
+    return sendto(*s,buf,len,0,(sockaddr*)a,sizeof(address_t)) == -1;
 }
 
 static inline int udp_rec(socket_t * s, void * buf, size_t len, size_t * inlen, address_t * a) {
 	int a_s = sizeof(address_t);
-    ssize_t rsize = recvfrom(*s,buf,len,0,a,&a_s);
+    ssize_t rsize = recvfrom(*s,buf,len,0,(sockaddr*)a,&a_s);
     if (rsize >= 0 && inlen) *inlen = rsize;
     return rsize < 0;
 }
