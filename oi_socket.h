@@ -9,9 +9,7 @@
 #else
 #endif
 
-#define SOCKET_IPV4 AF_INET
-#define SOCKET_IPV6 AF_INET6
-
+#define SOCKET_RAW SOCK_RAW
 #define SOCKET_UDP SOCK_DGRAM
 #define SOCKET_TCP SOCK_STREAM
 
@@ -19,12 +17,34 @@
 
 typedef SOCKET socket_t;
 
-static inline int socket_create(socket_t * s, int addr, int proto, int block) {
+static inline int socket_create(socket_t * s, int proto, int block) {
+	WSADATA data;
+	u_long blockval = block?0:1;
+	int opt = 0;
+	if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
+    if ((*s=socket(AF_INET6, proto,0))==-1) return 2;
+	if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
+	if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt)) return 4;
+    RETURN 0;
+}
+
+static inline int socket_create_ipv4(socket_t * s, int proto, int block) {
 	WSADATA data;
 	u_long blockval = block?0:1;
 	if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
-    if ((*s=socket(addr, proto,0))==-1) return 2;
+    if ((*s=socket(AF_INET, proto,0))==-1) return 2;
 	if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
+    RETURN 0;
+}
+
+static inline int socket_create_ipv6(socket_t * s, int proto, int block) {
+	WSADATA data;
+	u_long blockval = block?0:1;
+	int opt = 1;
+	if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
+    if ((*s=socket(AF_INET6, proto,0))==-1) return 2;
+	if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
+	if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt)) return 4;
     RETURN 0;
 }
 
@@ -38,9 +58,27 @@ static inline int socket_destroy(socket_t * s) {
 
 typedef int socket_t;
 
-static inline int socket_create(socket_t * s, int addr, int proto, int block) {
-    *s = socket(addr, proto, 0);
+static inline int socket_create(socket_t*s
+
+static inline int socket_create(socket_t * s, int proto, int block) {
+	int opt = 0;
+    *s = socket(AF_INET6, proto, 0);
     if (block) fcntl(*s, F_SETFL, fcntl(*s, F_GETFL)&~O_NONBLOCK);
+	if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt)) return 4;
+    return *s != -1;
+}
+
+static inline int socket_create_ipv4(socket_t * s, int proto, int block) {
+    *s = socket(AF_INET, proto, 0);
+    if (block) fcntl(*s, F_SETFL, fcntl(*s, F_GETFL)&~O_NONBLOCK);
+    return *s != -1;
+}
+
+static inline int socket_create_ipv6(socket_t * s, int proto, int block) {
+	int opt = 1;
+    *s = socket(AF_INET6, proto, 0);
+    if (block) fcntl(*s, F_SETFL, fcntl(*s, F_GETFL)&~O_NONBLOCK);
+	if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt)) return 4;
     return *s != -1;
 }
 
