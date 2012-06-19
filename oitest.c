@@ -6,6 +6,25 @@ char rrr = 0;
 #define PRINT(tt,ss,xx...) {sprintf(arrrr, ss, ##xx); printf("\t%-8s : %-36s : ", #tt, arrrr);}
 #define TEST(yy) {if (yy) printf("success\n"); else {printf("FAILURE!\n"); rrr=1;}}
 
+#include "oi_os.h"
+void testos() {
+	BEGIN(oi_os);
+#if defined(OI_WIN)
+	PRINT(system,"Windows"); TEST(1);
+#elif defined(OI_LINUX)
+	PRINT(system,"Linux"); TEST(1);
+#elif defined(OI_MAC)
+	PRINT(system,"Macintosh"); TEST(1);
+#elif defined(OI_FreeBSD)
+	PRINT(system,"Free BSD"); TEST(1);
+#elif defined(OI_UNKOWN_OS)
+	PRINT(os,"Unknown"); TEST(0);
+#else
+	PRINT(os,"None"); TEST(0);
+#endif
+}
+
+
 #include "oi_types.h"
 void testtypes(void) {
 	uint8  ui8  = (uint8 )-1;
@@ -42,12 +61,16 @@ void testtypes(void) {
 	TEST(sizeof(float80) > 8);
 }
 
-int main() {
-	printf("Checking oi's operability\n");
 
+
+int main() {
+	printf("\nChecking oi's operability\n");
+
+	testos();
 	testtypes();
 	
-	printf("\n");
+	if (rrr) printf("\noi has failed on this system.\nchanges must be made for code realiant on oi to work.\n\n");
+	else printf("\noi is functional on this system.\n\n");
 	return 0;
 }
 
