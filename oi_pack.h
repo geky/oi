@@ -147,5 +147,50 @@ static inline float64 unpackf64(void * b) {
 
 #endif
 
+//just manually putting into IEEE float form due to overabundance of issues with padding, endianess, and floating point implementations.... only on a 16 bit machine can you directly pack the raw value. 
+//May optimize this later.
+//but if you're using extended precision floats you probably aren't focused on speed.
+static inline void packf80(void * b, float80 in) {
+	uint16 sign = 0;
+	uint16 exp = 0;	
+	uint64 temp = 0;
+
+	if (in != in) {exp = 0xffff; temp = 0xffffffffffffffffULL;}
+	else if (in == ( 1.0L/0.0L)) {exp = 0x7fff; temp = 0x8000000000000000ULL;}
+	else if (in == (-1.0L/0.0L)) {exp = 0xffff; temp = 0x8000000000000000ULL;}
+	else if (in != 0) {
+		if (in < 0) {sign = 0x8000; in = -in;} 
+
+		while (in >= 2.0L) {in /= 2.0L; exp++;}
+		while (in <  1.0L) {in *= 2.0L; exp--;}
+
+		temp = in*(0x8000000000000000ULL+0.5L);
+		exp = (exp + 16383) | sign;
+	}
+
+	pack16(b,exp);
+	pack64(b,temp);
+}
+
+static inline float80 unpackf80(void * b) {
+	uint16 exp = unpack16(b);
+	uint64 temp = unpack64(b);
+	float80 out;
+
+	if (!exp && !temp) return 0.0L;
+	else if(((exp&0x7fff)==0x7fff) && temp == 0xffffffffffffffffULL) return 0.0L/0.0L;
+	else if(exp == 0x7fff && temp == 0x8000000000000000ULL) return  1.0L/0.0L;
+	else if(exp == 0xffff && temp == 0x8000000000000000ULL) return -1.0L/0.0L;
+
+	out = temp / 0x8000000000000000ULL;
+	if (exp & 0x8000) out = -out;
+	exp = exp & 0x7fff - 16383;
+	
+	while (exp > 0) {out *= 2.0L; exp--;}
+	while (exp < 0) {out /= 2.0L; exp++;}
+
+	return out;
+}
+
 #endif
 
