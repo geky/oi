@@ -131,8 +131,8 @@ static inline void packf64(void * b, float64 in) {
 		while (in >= 2.0) {in /= 2.0; exp++;}
 		while (in <  1.0) {in *= 2.0; exp--;}
 
-		temp |= (in-1)*(0x0010000000000000ULL+0.5);
-		temp |= (exp+1023) << 52;
+		temp |= (uint64)((in-1)*(0x0010000000000000ULL+0.5));
+		temp |= (uint64)(exp+1023) << 52;
 	}
 
 	pack64(b,temp);
