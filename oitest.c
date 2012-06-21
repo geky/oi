@@ -1,9 +1,9 @@
 #include <stdio.h>
 
-char arrrr[36];
+char arrrr[40];
 char rrr = 0;
 #define BEGIN(xx) printf("\n"#xx" :\n")
-#define PRINT(tt,ss,xx...) {sprintf(arrrr, ss, ##xx); printf("\t%-8s : %-36s : ", #tt, arrrr);}
+#define PRINT(tt,ss,xx...) {sprintf(arrrr, ss, ##xx); printf("\t%-8s : %-40s : ", #tt, arrrr);}
 #define TEST(yy) {if (yy) printf("success\n"); else {printf("FAILURE!\n"); rrr=1;}}
 
 #include "oi_os.h"
@@ -57,8 +57,16 @@ void testtypes(void) {
 	TEST(sizeof(float32) == 4);
 	PRINT(float64,"size->%-2d 1/3->%.20f", sizeof(float64), (float64)(1.0/3.0));
 	TEST(sizeof(float64) == 8);
-	PRINT(float80,"size->%-2d 1/3->%.20Lf", sizeof(float80), (float80)(1.0L/3.0L));
+	PRINT(float80,"size->%-2d 1/3->%0.20d", sizeof(float80), (float80)(1.0L/3.0L));
 	TEST(sizeof(float80) > 8);
+}
+
+#include "oi_pack.h"
+void testpack() {
+    uint8 * data;
+    
+    
+    
 }
 
 
