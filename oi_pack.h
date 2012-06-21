@@ -31,7 +31,7 @@ static inline uint32 unpack32(void * b) {
 
 static inline void pack64(void * b, uint64 in) {
 	pack32(b,(uint32)(in>>32));
-	pack32(b,(uint32)in);
+	pack32((uint32*)b+1,(uint32)in);
 }
 
 static inline uint64 unpack64(void * b) {
