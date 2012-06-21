@@ -92,8 +92,8 @@ static inline float32 unpackf32(void * b) {
 		case 0xff800000: return -1.0f/0.0f;
 	}
 	
-	out = (temp&0x007fffff)/0x00800000 + 1;
-	exp = (temp>>23) & 0xff - 127;
+	out = ((float32)(temp&0x007fffff))/0x00800000 + 1;
+	exp = ((temp>>23) & 0xff) - 127;
 	
 	while (exp > 0) {out *= 2.0f; exp--;}
 	while (exp < 0) {out /= 2.0f; exp++;}
@@ -151,8 +151,8 @@ static inline float64 unpackf64(void * b) {
 		case 0xfff0000000000000ULL: return -1.0/0.0;
 	}
 	
-	out = (temp&0x000fffffffffffffULL)/0x0010000000000000ULL + 1;
-	exp = (temp>>52) & 0x7ff - 1023;
+	out = ((float64)(temp&0x000fffffffffffffULL))/0x0010000000000000ULL + 1;
+	exp = ((temp>>52) & 0x7ff) - 1023;
 	
 	while (exp > 0) {out *= 2.0; exp--;}
 	while (exp < 0) {out /= 2.0; exp++;}
@@ -168,7 +168,7 @@ static inline float64 unpackf64(void * b) {
 //I would optimize this later but if you're using extended precision floats you probably aren't focused on speed.
 static inline void packf80(void * b, float80 in) {
 	int shift = 0;	
-        uint16 exp = 0;
+    uint16 exp = 0;
 	uint64 mant = 0;
 
 	if (in != in) {exp = 0xffff; mant = 0xffffffffffffffffULL;}
@@ -185,13 +185,13 @@ static inline void packf80(void * b, float80 in) {
 	}
 
 	pack16(b,exp);
-	pack64(b,mant);
+	pack64(((uint16*)b)+1,mant);
 }
 
 static inline float80 unpackf80(void * b) {
-        int shift = 0;
+    int shift = 0;
 	uint16 exp = unpack16(b);
-	uint64 mant = unpack64(b);
+	uint64 mant = unpack64(((uint16*)b)+1);
 	float80 out;
 
 	if (!exp && !mant) return 0.0L;
@@ -199,9 +199,9 @@ static inline float80 unpackf80(void * b) {
 	else if(exp == 0x7fff && mant == 0x8000000000000000ULL) return  1.0L/0.0L;
 	else if(exp == 0xffff && mant == 0x8000000000000000ULL) return -1.0L/0.0L;
 
-	out = mant / 0x8000000000000000ULL;
+	out = ((float80)mant) / 0x8000000000000000ULL;
 	if (exp & 0x8000) out = -out;
-	shift = exp & 0x7fff - 16383;
+	shift = (exp & 0x7fff) - 16383;
 	
 	while (shift > 0) {out *= 2.0L; shift--;}
 	while (shift < 0) {out /= 2.0L; shift++;}

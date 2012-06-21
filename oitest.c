@@ -73,6 +73,23 @@ void testtypes(void) {
 
 #include "oi_pack.h"
 void testpack() {
+	uint8 data[16];
+	uint8 i8 = 0x12, o8 = 0;
+	uint16 i16 = 0x1234, o16 = 0;
+	uint32 i32 = 0x12345678, o32 = 0;	
+	uint64 i64 = 0x123456789abcdef0ULL, o64 = 0;
+	float32 if32 = 12.625, of32 = 0;
+	float32 onan32 = 0, ozero32 = 0, oinf32 = 0;
+	float64 if64 = 12.625, of64 = 0;	
+	float32 onan64 = 0, ozero64 = 0, oinf64 = 0;
+	float80 if80 = 12.625, of80 = 0;	
+	float32 onan80 = 0, ozero80 = 0, oinf80 = 0;
+	uint8  nan[10] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
+	uint8 zero[10] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+	uint8 inf32[4] = {0x7f,0x80,0x00,0x00};
+	uint8 inf64[8] = {0x7f,0xf0,0x00,0x00,0x00,0x00,0x00,0x00};
+	uint8 inf80[10]= {0x7f,0xff,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+
 #define PACKTEST(n)                             \
 	memset(data,0,16);                      \
 	pack##n(data,i##n);                     \
@@ -80,19 +97,10 @@ void testpack() {
         PRINT(pack##n, "%s -> %s",              \
 		MEM(0,&i##n,sizeof i##n), 	\
 		MEM(1,data, sizeof i##n)); 	\
-		printf("\n"); 			\
+	TEST(*(uint8*)data == 0x12); 			\
 	PRINT(unpack##n, "%s <-",               \
 		MEM(0,&o##n,sizeof i##n)); 	\
-	TEST(i##n == o##n);
-
-	uint8 data[16];
-	uint8 i8 = 0x12, o8 = 0;
-	uint16 i16 = 0x1234, o16 = 0;
-	uint32 i32 = 0x12345678, o32 = 0;	
-	uint64 i64 = 0x123456789abcdef0ULL, o64 = 0;
-	float32 if32 = 2.625, of32 = 0;
-	float64 if64 = 2.625, of64 = 0;
-	float80 if80 = 2.625, of80 = 0;
+	TEST(i##n == o##n && *(uint8*)data == 0x12);
 
 	BEGIN(oi_pack);
 	PACKTEST(8);
@@ -101,30 +109,27 @@ void testpack() {
 	PACKTEST(64);
 	printf("\n");
 
-	memset(data,0,16);
-	packf32(data,if32);
-	of32 = unpackf32(data);
-        PRINT(packf32, "%f -> %s", if32, MEM(0,data, sizeof(float32)));
-        printf("\n");
-	PRINT(unpackf32, "%f <-", of32);
-	TEST(if32 == of32);
-        
-        memset(data,0,16);
-	packf64(data,if64);
-	of64 = unpackf64(data);
-        PRINT(packf64, "%f -> %s", if64, MEM(0,data, sizeof(float64)));
-        printf("\n");
-	PRINT(unpackf64, "%f <-", of64);
-	TEST(if64 == of64);
-        
-        memset(data,0,16);
-	packf32(data,if80);
-	of32 = unpackf80(data);
-        PRINT(packf80, "%Lf -> %s", if80, MEM(0,data, sizeof(float80)));
-        printf("\n");
-	PRINT(unpackf80, "%Lf <-", of80);
-	TEST(if80 == of80);
-        
+#undef PACKTEST
+#define PACKTEST(n)				\
+	memset(data,0,16);			\
+	packf##n(data,if##n);		\
+	of##n = unpackf##n(data);	\
+    PRINT(packf##n, "%g -> %s", (double)if##n, 	\
+		MEM(0,data, sizeof(float##n)));			\
+    TEST((*(uint8*)data & 0xf0) == 0x40);				\
+	PRINT(unpackf##n, "%g <-", (double)of##n);	\
+	TEST((int)of##n == (int)if##n);						\
+	ozero##n = unpackf##n(zero);				\
+	onan##n = unpackf##n(nan);					\
+	oinf##n = unpackf##n(inf##n);				\
+	PRINT( , "0->%g nan->%g inf->%g", 	\
+		(double)ozero##n, (double)onan##n, (double)oinf##n);	\
+	TEST(ozero##n == 0 && onan##n != onan##n && oinf##n == 1.0/0.0);
+		
+       
+    PACKTEST(32);
+	PACKTEST(64);    
+	PACKTEST(80);
 
 #undef PACKTEST
 }
@@ -138,9 +143,9 @@ int main() {
 	testtypes();
 	testpack();	
 
-	if (rrr) printf("\noi has failed on this system.\nchanges must be made for code realiant on oi to work.\n\n");
+	if (rrr) printf("\noi has failed on this system.\nchanges must be made for code using oi to work.\n\n");
 	else printf("\noi is functional on this system.\n\n");
-	return 0;
+	return rrr;
 }
 
 
