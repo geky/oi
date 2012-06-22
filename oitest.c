@@ -11,8 +11,9 @@ char rrr = 0;
 const char * MEM(int b, void * p, int len) {
 	int off=0; 
 	sprintf(memmm[b],"0x");
-	for(; len--; off++) 
-		sprintf(memmm[b]+2*off+2,"%02x",*((char*)p+off));
+	for(; len--; off++) {
+		sprintf(memmm[b]+2*off+2,"%02x",*((unsigned char*)p+off));
+        }
 	return memmm[b];
 }
 
@@ -72,26 +73,26 @@ void testtypes(void) {
 
 #include "oi_pack.h"
 void testpack() {
-#define PACKTEST(n)             	\
-	memset(data,0,16);          	\
-	pack##n(data,i##n);         	\
-	o##n = unpack##n(data);			\
-    PRINT(pack##n, "%s -> %s",  	\
+#define PACKTEST(n)                             \
+	memset(data,0,16);                      \
+	pack##n(data,i##n);                     \
+	o##n = unpack##n(data);                 \
+        PRINT(pack##n, "%s -> %s",              \
 		MEM(0,&i##n,sizeof i##n), 	\
 		MEM(1,data, sizeof i##n)); 	\
-		printf("\n"); 				\
-	PRINT(unpack##n, "%s <-",	    \
+		printf("\n"); 			\
+	PRINT(unpack##n, "%s <-",               \
 		MEM(0,&o##n,sizeof i##n)); 	\
 	TEST(i##n == o##n);
 
 	uint8 data[16];
-	uint8 i8 = 0x12, o8 = 0x00;
-	uint16 i16 = 0x1234, o16 = 0x0000;
-	uint32 i32 = 0x12345678, o32 = 0x00000000;	
-	uint64 i64 = 0x123456789abcdef0ULL, o64 = 0x000000000000000;
-	float32 if32 = 0.125, of32 = 0.125;
-	float64 if64 = 0.125, of64 = 0.125;
-	float80 if80 = 0.125, of80 = 0.125;
+	uint8 i8 = 0x12, o8 = 0;
+	uint16 i16 = 0x1234, o16 = 0;
+	uint32 i32 = 0x12345678, o32 = 0;	
+	uint64 i64 = 0x123456789abcdef0ULL, o64 = 0;
+	float32 if32 = 2.625, of32 = 0;
+	float64 if64 = 2.625, of64 = 0;
+	float80 if80 = 2.625, of80 = 0;
 
 	BEGIN(oi_pack);
 	PACKTEST(8);
@@ -99,9 +100,31 @@ void testpack() {
 	PACKTEST(32);
 	PACKTEST(64);
 	printf("\n");
-	PACKTEST(f32);
-	PACKTEST(f64);
-	PACKTEST(f80);
+
+	memset(data,0,16);
+	packf32(data,if32);
+	of32 = unpackf32(data);
+        PRINT(packf32, "%f -> %s", if32, MEM(0,data, sizeof(float32)));
+        printf("\n");
+	PRINT(unpackf32, "%f <-", of32);
+	TEST(if32 == of32);
+        
+        memset(data,0,16);
+	packf64(data,if64);
+	of64 = unpackf64(data);
+        PRINT(packf64, "%f -> %s", if64, MEM(0,data, sizeof(float64)));
+        printf("\n");
+	PRINT(unpackf64, "%f <-", of64);
+	TEST(if64 == of64);
+        
+        memset(data,0,16);
+	packf32(data,if80);
+	of32 = unpackf80(data);
+        PRINT(packf80, "%Lf -> %s", if80, MEM(0,data, sizeof(float80)));
+        printf("\n");
+	PRINT(unpackf80, "%Lf <-", of80);
+	TEST(if80 == of80);
+        
 
 #undef PACKTEST
 }

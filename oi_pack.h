@@ -1,7 +1,10 @@
 #ifndef OI_PACK
 #define OI_PACK
 
-//#include "oi_os.h"
+#include "oi_os.h"
+#ifdef OI_WIN
+#include "winsock2.h"
+#endif
 #include "oi_types.h"
 
 
@@ -43,14 +46,15 @@ static inline uint64 unpack64(void * b) {
 //if the mantissa sizes matches IEEE specification it is most likely IEEE 754 
 // which is what we want
 
-#if defined(__STDC_IEC_559__) || (__FLT_MANT_DIG__ == 23)
+#if defined(__STDC_IEC_559__) || (__FLT_MANT_DIG__ == 24)
 
 static inline void packf32(void * b, float32 in) {
-	pack32(b,in); 
+	pack32(b,*(uint32*)&in); 
 }
 
 static inline float32 unpackf32(void * b) {
-	return unpack32(b);
+        uint32 temp = unpack32(b);
+	return *(float32*)&temp;
 }
 
 #else
@@ -64,11 +68,11 @@ static inline void packf32(void * b, float32 in) {
 	else if (in == (-1.0f/0.0f)) temp = 0xff800000;
 	else if (in != 0) {
 		if (in < 0) {temp = 0x80000000; in = -in;} 
-
+                
 		while (in >= 2.0f) {in /= 2.0f; exp++;}
 		while (in <  1.0f) {in *= 2.0f; exp--;}
 
-		temp |= (uint32)((in-1)*(0x00800000+0.5f));
+		temp |= (uint32)((in-1)*(0x00800000+0.5));
 		temp |= (exp+127) << 23;
 	}
 
@@ -104,11 +108,12 @@ static inline float32 unpackf32(void * b) {
 #if defined(__STDC_IEC_559__) || (__DBL_MANT_DIG__ == 53)
 
 static inline void packf64(void * b, float64 in) {
-	pack64(b,in);
+	pack64(b,*(uint64*)&in);
 }
 
 static inline float64 unpackf64(void * b) {
-	return unpack64(b);
+        uint64 temp = unpack64(b);
+	return *(float64*)&temp;
 }
 
 #else
