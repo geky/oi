@@ -46,7 +46,7 @@ static inline uint64 unpack64(void * b) {
 //if the mantissa sizes matches IEEE specification it is most likely IEEE 754 
 // which is what we want
 
-#if defined(__STDC_IEC_559__) || (__FLT_MANT_DIG__ == 24)
+#if defined(__STDC_IEC_559__) || ((__FLT_MANT_DIG__ == 24) && (__DBL_MANT_DIG__ == 53))
 
 static inline void packf32(void * b, float32 in) {
 	pack32(b,*(uint32*)&in); 
@@ -55,6 +55,15 @@ static inline void packf32(void * b, float32 in) {
 static inline float32 unpackf32(void * b) {
         uint32 temp = unpack32(b);
 	return *(float32*)&temp;
+}
+
+static inline void packf64(void * b, float64 in) {
+	pack64(b,*(uint64*)&in);
+}
+
+static inline float64 unpackf64(void * b) {
+        uint64 temp = unpack64(b);
+	return *(float64*)&temp;
 }
 
 #else
@@ -67,7 +76,7 @@ static inline void packf32(void * b, float32 in) {
 	else if (in == ( 1.0f/0.0f)) temp = 0x7f800000;
 	else if (in == (-1.0f/0.0f)) temp = 0xff800000;
 	else if (in != 0) {
-		if (in < 0) {temp = 0x80000000; in = -in;} 
+		if (in < 0.0f) {temp = 0x80000000; in = -in;} 
                 
 		while (in >= 2.0f) {in /= 2.0f; exp++;}
 		while (in <  1.0f) {in *= 2.0f; exp--;}
@@ -84,13 +93,10 @@ static inline float32 unpackf32(void * b) {
 	float32 out;
 	uint32 temp = unpack32(b);
 
-	switch (temp) {
-		case 0x00000000: return  0.0f;
-		case 0xffffffff: 
-		case 0x7fffffff: return  0.0f/0.0f;
-		case 0x7f800000: return  1.0f/0.0f;
-		case 0xff800000: return -1.0f/0.0f;
-	}
+        if (temp == 0x00000000) return  0.0f;
+        if (temp == 0x7f800000) return  1.0f/0.0f;
+        if (temp == 0xff800000) return -1.0f/0.0f;
+        if ((temp & 0x7f800000)==0x7f800000) return 0.0f/0.0f;
 	
 	out = ((float32)(temp&0x007fffff))/0x00800000 + 1;
 	exp = ((temp>>23) & 0xff) - 127;
@@ -102,22 +108,6 @@ static inline float32 unpackf32(void * b) {
 	return out;
 }
 
-
-#endif
-
-#if defined(__STDC_IEC_559__) || (__DBL_MANT_DIG__ == 53)
-
-static inline void packf64(void * b, float64 in) {
-	pack64(b,*(uint64*)&in);
-}
-
-static inline float64 unpackf64(void * b) {
-        uint64 temp = unpack64(b);
-	return *(float64*)&temp;
-}
-
-#else
-
 static inline void packf64(void * b, float64 in) {
 	int exp = 0;	
 	uint64 temp = 0;
@@ -125,7 +115,7 @@ static inline void packf64(void * b, float64 in) {
 	if (in != in) temp = 0xffffffffffffffffULL;
 	else if (in == ( 1.0/0.0)) temp = 0x7ff0000000000000ULL;
 	else if (in == (-1.0/0.0)) temp = 0xfff0000000000000ULL;
-	else if (in != 0) {
+	else if (in != 0.0) {
 		if (in < 0) {temp = 0x8000000000000000ULL; in = -in;} 
 
 		while (in >= 2.0) {in /= 2.0; exp++;}
@@ -143,13 +133,10 @@ static inline float64 unpackf64(void * b) {
 	float64 out;
 	uint64 temp = unpack64(b);
 
-	switch (temp) {
-		case 0x0000000000000000ULL: return  0.0;
-		case 0xffffffffffffffffULL: 
-		case 0x7fffffffffffffffULL: return  0.0/0.0;
-		case 0x7ff0000000000000ULL: return  1.0/0.0;
-		case 0xfff0000000000000ULL: return -1.0/0.0;
-	}
+	if (temp == 0x0000000000000000ULL) return  0.0;
+        if (temp == 0x7ff0000000000000ULL) return  1.0/0.0;
+        if (temp == 0xfff0000000000000ULL) return -1.0/0.0;
+        if ((temp & 0x7ff0000000000000ULL)==0x7ff0000000000000ULL) return 0.0/0.0;
 	
 	out = ((float64)(temp&0x000fffffffffffffULL))/0x0010000000000000ULL + 1;
 	exp = ((temp>>52) & 0x7ff) - 1023;
@@ -168,13 +155,13 @@ static inline float64 unpackf64(void * b) {
 //I would optimize this later but if you're using extended precision floats you probably aren't focused on speed.
 static inline void packf80(void * b, float80 in) {
 	int shift = 0;	
-    uint16 exp = 0;
+        uint16 exp = 0;
 	uint64 mant = 0;
 
 	if (in != in) {exp = 0xffff; mant = 0xffffffffffffffffULL;}
 	else if (in == ( 1.0L/0.0L)) {exp = 0x7fff; mant = 0x8000000000000000ULL;}
 	else if (in == (-1.0L/0.0L)) {exp = 0xffff; mant = 0x8000000000000000ULL;}
-	else if (in != 0) {
+	else if (in != 0.0L) {
 		if (in < 0) {exp = 0x8000; in = -in;} 
 
 		while (in >= 2.0L) {in /= 2.0L; shift++;}
@@ -194,10 +181,11 @@ static inline float80 unpackf80(void * b) {
 	uint64 mant = unpack64(((uint16*)b)+1);
 	float80 out;
 
-	if (!exp && !mant) return 0.0L;
-	else if(((exp&0x7fff)==0x7fff) && mant == 0xffffffffffffffffULL) return 0.0L/0.0L;
-	else if(exp == 0x7fff && mant == 0x8000000000000000ULL) return  1.0L/0.0L;
-	else if(exp == 0xffff && mant == 0x8000000000000000ULL) return -1.0L/0.0L;
+	if(exp == 0x0000 && mant == 0x0000000000000000ULL) return  0.0L;
+        if(exp == 0x7fff && mant == 0x8000000000000000ULL) return  1.0L/0.0L;
+	if(exp == 0xffff && mant == 0x8000000000000000ULL) return -1.0L/0.0L;
+	if((exp & 0x7fff)==0x7fff) return 0.0L/0.0L;
+	
 
 	out = ((float80)mant) / 0x8000000000000000ULL;
 	if (exp & 0x8000) out = -out;

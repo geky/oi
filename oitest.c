@@ -97,7 +97,7 @@ void testpack() {
         PRINT(pack##n, "%s -> %s",              \
 		MEM(0,&i##n,sizeof i##n), 	\
 		MEM(1,data, sizeof i##n)); 	\
-	TEST(*(uint8*)data == 0x12); 			\
+	TEST(*(uint8*)data == 0x12);            \
 	PRINT(unpack##n, "%s <-",               \
 		MEM(0,&o##n,sizeof i##n)); 	\
 	TEST(i##n == o##n && *(uint8*)data == 0x12);
@@ -110,28 +110,44 @@ void testpack() {
 	printf("\n");
 
 #undef PACKTEST
-#define PACKTEST(n)				\
-	memset(data,0,16);			\
-	packf##n(data,if##n);		\
-	of##n = unpackf##n(data);	\
-    PRINT(packf##n, "%g -> %s", (double)if##n, 	\
-		MEM(0,data, sizeof(float##n)));			\
-    TEST((*(uint8*)data & 0xf0) == 0x40);				\
+#define PACKTEST(n)                                     \
+	memset(data,0,16);                              \
+	packf##n(data,if##n);                           \
+	of##n = unpackf##n(data);                       \
+        PRINT(packf##n, "%g -> %s", (double)if##n,      \
+		MEM(0,data, sizeof(float##n)));		\
+        TEST((*(uint8*)data & 0xf0) == 0x40);		\
 	PRINT(unpackf##n, "%g <-", (double)of##n);	\
-	TEST((int)of##n == (int)if##n);						\
-	ozero##n = unpackf##n(zero);				\
-	onan##n = unpackf##n(nan);					\
-	oinf##n = unpackf##n(inf##n);				\
-	PRINT( , "0->%g nan->%g inf->%g", 	\
+	TEST((int)of##n == (int)if##n);			\
+	ozero##n = unpackf##n(zero);			\
+	onan##n = unpackf##n(nan);			\
+	oinf##n = unpackf##n(inf##n);			\
+	PRINT( , "0->%g nan->%g inf->%g",               \
 		(double)ozero##n, (double)onan##n, (double)oinf##n);	\
-	TEST(ozero##n == 0 && onan##n != onan##n && oinf##n == 1.0/0.0);
-		
+	TEST(ozero##n == 0 && onan##n != onan##n && oinf##n == 1.0/0.0);		
        
-    PACKTEST(32);
+        PACKTEST(32);
 	PACKTEST(64);    
 	PACKTEST(80);
 
 #undef PACKTEST
+}
+
+#include "oi_time.h"
+void testtime() {
+    int err;
+    uint64 b,a;
+    
+    BEGIN(oi_time);
+    b=millis();
+    PRINT(millis, "before -> %llu", b); printf("\n");
+    PRINT(sleep, "sleep(1500) err -> %d", err=sleep(1500)); TEST(!err);
+    PRINT(     , "sleep(1000) err -> %d", err=sleep(1000)); TEST(!err);
+    PRINT(     , "sleep(500)  err -> %d", err=sleep(500) ); TEST(!err);
+    a = millis();
+    PRINT(      , "after  -> %llu  diff -> %llu", a, a-b);
+    TEST((b/100+30) == (a/100));
+    
 }
 
 
@@ -141,7 +157,8 @@ int main() {
 
 	testos();
 	testtypes();
-	testpack();	
+	testpack();
+        testtime();
 
 	if (rrr) printf("\noi has failed on this system.\nchanges must be made for code using oi to work.\n\n");
 	else printf("\noi is functional on this system.\n\n");
