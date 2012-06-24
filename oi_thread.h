@@ -64,7 +64,7 @@ void * _ud_thread_handler(void * args) {
 }
 
 static inline int thread_create(thread_t * t, void (*r)(void*), void * a) {
-	t->func = f;
+	t->func = r;
 	t->data = a;
 	return pthread_create(&t->i,0,&_ud_thread_handler,t);
 }
