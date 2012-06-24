@@ -139,7 +139,8 @@ void testthreadthread(void * a) {
     PRINT(, TEST(!err), "thread %d yielding err %d", (int)a, err);
     PRINT(sleep, "\n", "thread %d sleep(100)", (int)a);
     err = sleep(100);
-    PRINT(, TEST(!err), "thread %d sleeping err %d", (int)a, err);
+    PRINT(, TEST(((int)a) == 2), "thread %d not terminated", (int)a);
+    PRINT(, TEST(!err), "thread %d sleep err %d", (int)a, err)
 }
 
 
@@ -158,6 +159,7 @@ void testthread() {
     PRINT(terminate, TEST(!err), "terminating thread %d err %d", 1, err);
     err = thread_join(&t2);
     PRINT(join, TEST(!err), "joining thread %d err %d", 2, err);
+    PRINT( , TEST(1), "main thread joined");
     
     
 }
