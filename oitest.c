@@ -127,7 +127,7 @@ void testtime() {
     PRINT( , TEST(!err), "sleep(1000) err %d", err=sleep(1000));
     PRINT( , TEST(!err), "sleep(500)  err %d", err=sleep(500) );
     a = millis();
-    PRINT( , TEST((b/100+30) == (a/100)), "after  -> %llu  diff = %llu", a, a-b);
+    PRINT( , TEST((a-b)/100 == 30), "after  -> %llu  diff = %llu", a, a-b);
     
 }
 
@@ -162,21 +162,117 @@ void testthread() {
     err = thread_join(&t2);
     PRINT(join, TEST(!err), "joining thread %d err %d", 2, err);
     PRINT( , TEST(1), "main thread joined");
+    err = thread_destroy(&t1);
+    PRINT(destroy, TEST(!err), "destroying thread %d err %d", 1, err);
+    err = thread_destroy(&t2);
+    PRINT(      , TEST(!err), "destroying thread %d err %d", 2, err);
+}
+
+#include "oi_mutex.h"
+int testmutexdata;
+
+void testmutexthread(void * p) {
+    mutex_t * mp = (mutex_t*)p;
+    int err;
     
+    err = mutex_try_lock(mp);
+    PRINT(try_lock, TEST(err), "thread 2 trying mutex err %d", err);
+    err = mutex_lock(mp);
+    PRINT(lock, TEST(!err), "thread 2 locking mutex err %d", err);
+    
+    testmutexdata++;
+    PRINT( , TEST(testmutexdata == 2), "data access 2 -> %d", testmutexdata);
+    
+    err = mutex_unlock(mp);
+    PRINT(unlock, TEST(!err), "thread 2 unlocking mutex err %d", err);
+}
+
+void testmutex() {
+    thread_t t;
+    mutex_t m;
+    int err;
+
+    
+    testmutexdata = 0;
+    BEGIN(oi_mutex);
+    
+    err = mutex_create(&m);
+    PRINT(create, TEST(!err), "creating mutex err %d", err);
+    err = mutex_lock(&m);
+    PRINT(lock, TEST(!err), "locking mutex err %d", err);
+    
+    thread_create(&t,&testmutexthread,&m);
+    sleep(100);
+    
+    testmutexdata++;
+    PRINT( , TEST(testmutexdata == 1), "data access 1 -> %d", testmutexdata);
+    
+    err = mutex_unlock(&m);
+    PRINT(unlock, TEST(!err), "unlocking mutex err %d", err);
+    
+    thread_join(&t);
+    thread_destroy(&t);
+    err = mutex_destroy(&m);
+    PRINT(delete, TEST(!err), "destroying mutex err %d", err);
+}
+
+#include "oi_local.h"
+
+void testlocalthread(void * p) {
+    local_t * lp = (local_t*)p;
+    int err;
+    int temp;
+    
+    err = local_set(lp,(void*)2);
+    PRINT(set, "\n", "setting value to 2");
+    temp = (int)local_get(lp);
+    PRINT(get, TEST(temp == 2), "thread 2 value is %d", temp);
+}
+
+void testlocal() {
+    local_t l;
+    thread_t t;
+    int err;
+    int temp;
+    
+    BEGIN(oi_local);
+    err = local_create(&l);
+    PRINT(create, TEST(!err), "creating local err %d", err);
+    err = local_set(&l,(void*)1);
+    PRINT(set, "\n", "setting value to 1");
+    temp = (int)local_get(&l);
+    PRINT(get, TEST(temp == 1), "thread 1 value is %d", temp);
+    
+    thread_create(&t,&testlocalthread,&l);
+    thread_join(&t);
+    thread_destroy(&t);
+    
+    temp = (int)local_get(&l);
+    PRINT(get, TEST(temp == 1), "thread 1 value is %d", temp);
+    err = local_create(&l);
+    PRINT(destroy, TEST(!err), "destroying local err %d", err);
     
 }
 
-int main() {
-	printf("\nChecking oi's operability\n");
+int main(int argc, char ** argv) {
+	
+	int all = argc>1; 
+	
+	for (;argc > 0; argc--) {	
 
-	testos();
-	testtypes();
-	testpack();
-        testtime();
-        testthread();
+#define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) test##file();
+	
+	    TESTF(os);
+	    TESTF(types);
+            TESTF(pack);
+	    TESTF(time);
+	    TESTF(thread);
+            TESTF(mutex);
+            TESTF(local);
+	}
 
-	if (rrr) printf("\noi has failed on this system.\nchanges must be made for code using oi to work.\n\n");
-	else printf("\noi is functional on this system.\n\n");
+	if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");
+	else printf("\noi is functional on this system.\nsuccess!\n\n");
 	return rrr;
 }
 
