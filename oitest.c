@@ -254,6 +254,65 @@ void testlocal() {
     
 }
 
+#include "oi_rwlock.h"
+
+void testrwlockthread(void * d) {
+	rwlock_t * prw = (rwlock_t*)d;
+	int err;
+
+	err = rwlock_try_read_lock(prw);
+	PRINT(try_read, TEST(err), "read thread trying lock err %d", err);
+	err = rwlock_read_lock(prw);
+	PRINT(read_lock, TEST(!err), "read thread locking err %d", err);
+	sleep(100);
+	
+	err = rwlock_read_lock(prw);
+	PRINT(read_lock, TEST(!err), "read thread 2nd locking err %d", err);
+	err = rwlock_read_unlock(prw);
+	PRINT(read_unlk, TEST(!err), "read thread 2nd unlocking err %d", err);
+	err = rwlock_read_unlock(prw);
+	PRINT(read_unlk, TEST(!err), "read thread unlocking err %d", err);
+}
+
+void testrwlock() {
+	thread_t t1,t2;
+	rwlock_t rw;
+	int err;
+
+	BEGIN(oi_rwlock);
+
+	err = rwlock_create(&rw);
+	PRINT(create, TEST(!err), "creating rwlock err %d", err);
+	err = rwlock_write_lock(&rw);
+	PRINT(write_lock, TEST(!err), "write thread locking err %d", err);
+	
+	thread_create(&t1,&testrwlockthread,&rw);
+	thread_create(&t2,&testrwlockthread,&rw);
+
+	sleep(50);
+
+	err = rwlock_write_unlock(&rw);
+	PRINT(write_unlk, TEST(!err), "write thread unlocking err %d", err);
+
+	sleep(50);
+
+	err = rwlock_try_write_lock(&rw);
+	PRINT(try_write, TEST(err), "write thread trying lock err %d", err);
+	err = rwlock_write_lock(&rw);
+	PRINT(write_lock, TEST(!err), "write thread locking err %d", err);
+	err = rwlock_write_unlock(&rw);
+	PRINT(write_unlk, TEST(!err), "write thread unlocking err %d", err);
+	
+	thread_join(&t1);
+	thread_join(&t2);
+	thread_destroy(&t1);
+	thread_destroy(&t2);
+	
+	err = rwlock_destroy(&rw);
+	PRINT(destroy, TEST(!err), "destroying rwlock err %d", err);
+}
+
+
 int main(int argc, char ** argv) {
 	
 	int all = argc>1; 
@@ -269,6 +328,7 @@ int main(int argc, char ** argv) {
 	    TESTF(thread);
             TESTF(mutex);
             TESTF(local);
+		TESTF(rwlock);
 	}
 
 	if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");
