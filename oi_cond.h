@@ -47,6 +47,8 @@ typedef struct {
 } cond_t;
 
 static inline int cond_create(cond_t * c) {
+	c->cound = 0;
+	c->unlocking = 0;
 	c->event = CreateEvent(0,1,1,0);
 	InitializeCriticalSection(&c->lock);
 	return 0;
