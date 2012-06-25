@@ -1,17 +1,20 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
 #include <string.h>
 
 char memmm[2][40];
 volatile char rrr = 0;
 #define BEGIN(xx) printf("\n"#xx" :\n")
-#define PRINT(tt, test, ss,xx...) {char arrrr[40]; sprintf(arrrr,ss, ##xx);printf("\t%-10s: %-40s %s",#tt,arrrr,test);}
+#define PRINT(tt, test, ss,xx...) {char arrrr[42]; sprintf(arrrr,ss, ##xx); printf("\t%-10s: %-40s %s",#tt,arrrr,test);}
 #define TEST(yy) ((yy) ? ": success\n" : (rrr=1, ": FAILURE!\n"))
 
 const char * MEM(int b, void * p, int len) {
-	int off=0; 
-	sprintf(memmm[b],"0x");
-	for(; len--; off++) {
-		sprintf(memmm[b]+2*off+2,"%02x",*((unsigned char*)p+off));
+	char * str = memmm[b];
+        unsigned char * dat = (unsigned char*)p;
+	sprintf(str,"0x");
+	for(str+=2; len--; str+=2, dat++) {
+		sprintf(str,"%02x",*dat);
         }
 	return memmm[b];
 }
@@ -58,10 +61,16 @@ void testtypes(void) {
 	PRINT(float32, TEST(sizeof(float32) == 4), "size = %-2d 1/3->%.20f", sizeof(float32), (float32)(1.0/3.0));
 	PRINT(float64, TEST(sizeof(float64) == 8), "size = %-2d 1/3->%.20f", sizeof(float64), (float64)(1.0/3.0));
 	PRINT(float80, TEST(sizeof(float80) >  8), "size = %-2d 1/3->%.20Lf", sizeof(float80), (float80)(1.0L/3.0L));
-	;
 }
 
 #include "oi_pack.h"
+
+uint8  nan[10] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
+uint8 zero[10] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+uint8 inf32[4] = {0x7f,0x80,0x00,0x00};
+uint8 inf64[8] = {0x7f,0xf0,0x00,0x00,0x00,0x00,0x00,0x00};
+uint8 inf80[10]= {0x7f,0xff,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+
 void testpack() {
 	uint8 data[16];
 	uint8 i8 = 0x12, o8 = 0;
@@ -74,18 +83,13 @@ void testpack() {
 	float32 onan64 = 0, ozero64 = 0, oinf64 = 0;
 	float80 if80 = 12.625, of80 = 0;	
 	float32 onan80 = 0, ozero80 = 0, oinf80 = 0;
-	uint8  nan[10] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
-	uint8 zero[10] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-	uint8 inf32[4] = {0x7f,0x80,0x00,0x00};
-	uint8 inf64[8] = {0x7f,0xf0,0x00,0x00,0x00,0x00,0x00,0x00};
-	uint8 inf80[10]= {0x7f,0xff,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
 #define PACKTEST(n)                             \
 	memset(data,0,16);                      \
 	pack##n(data,i##n);                     \
 	o##n = unpack##n(data);                 \
         PRINT(pack##n, TEST(*(uint8*)data == 0x12), "%s -> %s", MEM(0,&i##n,sizeof i##n), MEM(1,data, sizeof i##n));\
-	PRINT(unpack##n, TEST(i##n == o##n && *(uint8*)data == 0x12), "%s <-", MEM(0,&o##n,sizeof i##n));
+	PRINT(unpack##n, TEST(i##n == o##n), "%s <-", MEM(0,&o##n,sizeof i##n));
 
 	BEGIN(oi_pack);
 	PACKTEST(8);
