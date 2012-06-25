@@ -127,7 +127,7 @@ void testtime() {
     PRINT( , TEST(!err), "sleep(1000) err %d", err=sleep(1000));
     PRINT( , TEST(!err), "sleep(500)  err %d", err=sleep(500) );
     a = millis();
-    PRINT( , TEST((b/100+30) == (a/100)), "after  -> %llu  diff = %llu", a, a-b);
+    PRINT( , TEST((a-b)/100 == 30), "after  -> %llu  diff = %llu", a, a-b);
     
 }
 
@@ -166,17 +166,23 @@ void testthread() {
     
 }
 
-int main() {
-	printf("\nChecking oi's operability\n");
+int main(int argc, char ** argv) {
+	
+	int all = argc>1; 
+	
+	for (;argc > 0; argc--) {	
 
-	testos();
-	testtypes();
-	testpack();
-        testtime();
-        testthread();
+#define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) test##file();
+	
+		TESTF(os);
+		TESTF(types);
+		TESTF(pack);
+	    TESTF(time);
+	    TESTF(thread);
+	}
 
-	if (rrr) printf("\noi has failed on this system.\nchanges must be made for code using oi to work.\n\n");
-	else printf("\noi is functional on this system.\n\n");
+	if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");
+	else printf("\noi is functional on this system.\nsuccess!\n\n");
 	return rrr;
 }
 
