@@ -1,5 +1,5 @@
 #ifndef OI_PACK
-#define OI_PACK
+#define OI_PACK 1
 
 #include "oi_os.h"
 #ifdef OI_WIN
@@ -9,36 +9,36 @@
 
 
 static inline void pack8(void * b, uint8 in) {
-	*(uint8*)b = in;
+    *(uint8*)b = in;
 }
 
 static inline uint8 unpack8(void * b) {
-	return *(uint8*)b;
+    return *(uint8*)b;
 }
 
 static inline void pack16(void * b, uint16 in) {
-	*(uint16*)b = htons(in);
+    *(uint16*)b = htons(in);
 }
 
 static inline uint16 unpack16(void * b) {
-	return ntohs(*(uint16*)b);
+    return ntohs(*(uint16*)b);
 }
 
 static inline void pack32(void * b, uint32 in) {
-	*(uint32*)b = htonl(in);
+    *(uint32*)b = htonl(in);
 }
 
 static inline uint32 unpack32(void * b) {
-	return ntohl(*(uint32*)b);
+    return ntohl(*(uint32*)b);
 }
 
 static inline void pack64(void * b, uint64 in) {
-	pack32(b,(uint32)(in>>32));
-	pack32((uint32*)b+1,(uint32)in);
+    pack32(b,(uint32)(in>>32));
+    pack32((uint32*)b+1,(uint32)in);
 }
 
 static inline uint64 unpack64(void * b) {
-	return ((uint64)unpack32(b)) << 32 | unpack32(((uint32*)b)+1);
+    return ((uint64)unpack32(b)) << 32 | unpack32(((uint32*)b)+1);
 
 }
 
@@ -49,103 +49,103 @@ static inline uint64 unpack64(void * b) {
 #if defined(__STDC_IEC_559__) || ((__FLT_MANT_DIG__ == 24) && (__DBL_MANT_DIG__ == 53))
 
 static inline void packf32(void * b, float32 in) {
-	pack32(b,*(uint32*)&in); 
+    pack32(b,*(uint32*)&in); 
 }
 
 static inline float32 unpackf32(void * b) {
-        uint32 temp = unpack32(b);
-	return *(float32*)&temp;
+    uint32 temp = unpack32(b);
+    return *(float32*)&temp;
 }
 
 static inline void packf64(void * b, float64 in) {
-	pack64(b,*(uint64*)&in);
+    pack64(b,*(uint64*)&in);
 }
 
 static inline float64 unpackf64(void * b) {
-        uint64 temp = unpack64(b);
-	return *(float64*)&temp;
+    uint64 temp = unpack64(b);
+    return *(float64*)&temp;
 }
 
 #else
 
 static inline void packf32(void * b, float32 in) {
-	int exp = 0;	
-	uint32 temp = 0;
+    int exp = 0;    
+    uint32 temp = 0;
 
-	if (in != in) temp = 0xffffffff;
-	else if (in == ( 1.0f/0.0f)) temp = 0x7f800000;
-	else if (in == (-1.0f/0.0f)) temp = 0xff800000;
-	else if (in != 0) {
-		if (in < 0.0f) {temp = 0x80000000; in = -in;} 
+    if (in != in) temp = 0xffffffff;
+    else if (in == ( 1.0f/0.0f)) temp = 0x7f800000;
+    else if (in == (-1.0f/0.0f)) temp = 0xff800000;
+    else if (in != 0) {
+        if (in < 0.0f) {temp = 0x80000000; in = -in;} 
                 
-		while (in >= 2.0f) {in /= 2.0f; exp++;}
-		while (in <  1.0f) {in *= 2.0f; exp--;}
+        while (in >= 2.0f) {in /= 2.0f; exp++;}
+        while (in <  1.0f) {in *= 2.0f; exp--;}
 
-		temp |= (uint32)((in-1)*(0x00800000+0.5));
-		temp |= (exp+127) << 23;
-	}
+        temp |= (uint32)((in-1)*(0x00800000+0.5));
+        temp |= (exp+127) << 23;
+    }
 
-	pack32(b,temp);
+    pack32(b,temp);
 }
 
 static inline float32 unpackf32(void * b) {
-	int exp;
-	float32 out;
-	uint32 temp = unpack32(b);
+    int exp;
+    float32 out;
+    uint32 temp = unpack32(b);
 
-        if (temp == 0x00000000) return  0.0f;
-        if (temp == 0x7f800000) return  1.0f/0.0f;
-        if (temp == 0xff800000) return -1.0f/0.0f;
-        if ((temp & 0x7f800000)==0x7f800000) return 0.0f/0.0f;
-	
-	out = ((float32)(temp&0x007fffff))/0x00800000 + 1;
-	exp = ((temp>>23) & 0xff) - 127;
-	
-	while (exp > 0) {out *= 2.0f; exp--;}
-	while (exp < 0) {out /= 2.0f; exp++;}
+    if (temp == 0x00000000) return  0.0f;
+    if (temp == 0x7f800000) return  1.0f/0.0f;
+    if (temp == 0xff800000) return -1.0f/0.0f;
+    if ((temp & 0x7f800000)==0x7f800000) return 0.0f/0.0f;
+    
+    out = ((float32)(temp&0x007fffff))/0x00800000 + 1;
+    exp = ((temp>>23) & 0xff) - 127;
+    
+    while (exp > 0) {out *= 2.0f; exp--;}
+    while (exp < 0) {out /= 2.0f; exp++;}
 
-	if (temp & 0x80000000) out = -out;
-	return out;
+    if (temp & 0x80000000) out = -out;
+    return out;
 }
 
 static inline void packf64(void * b, float64 in) {
-	int exp = 0;	
-	uint64 temp = 0;
+    int exp = 0;    
+    uint64 temp = 0;
 
-	if (in != in) temp = 0xffffffffffffffffULL;
-	else if (in == ( 1.0/0.0)) temp = 0x7ff0000000000000ULL;
-	else if (in == (-1.0/0.0)) temp = 0xfff0000000000000ULL;
-	else if (in != 0.0) {
-		if (in < 0) {temp = 0x8000000000000000ULL; in = -in;} 
+    if (in != in) temp = 0xffffffffffffffffULL;
+    else if (in == ( 1.0/0.0)) temp = 0x7ff0000000000000ULL;
+    else if (in == (-1.0/0.0)) temp = 0xfff0000000000000ULL;
+    else if (in != 0.0) {
+        if (in < 0) {temp = 0x8000000000000000ULL; in = -in;} 
 
-		while (in >= 2.0) {in /= 2.0; exp++;}
-		while (in <  1.0) {in *= 2.0; exp--;}
+        while (in >= 2.0) {in /= 2.0; exp++;}
+        while (in <  1.0) {in *= 2.0; exp--;}
 
-		temp |= (uint64)((in-1)*(0x0010000000000000ULL+0.5));
-		temp |= (uint64)(exp+1023) << 52;
-	}
+        temp |= (uint64)((in-1)*(0x0010000000000000ULL+0.5));
+        temp |= (uint64)(exp+1023) << 52;
+    }
 
-	pack64(b,temp);
+    pack64(b,temp);
 }
 
 static inline float64 unpackf64(void * b) {
-	int exp;
-	float64 out;
-	uint64 temp = unpack64(b);
+    int exp;
+    float64 out;
+    uint64 temp = unpack64(b);
 
-	if (temp == 0x0000000000000000ULL) return  0.0;
-        if (temp == 0x7ff0000000000000ULL) return  1.0/0.0;
-        if (temp == 0xfff0000000000000ULL) return -1.0/0.0;
-        if ((temp & 0x7ff0000000000000ULL)==0x7ff0000000000000ULL) return 0.0/0.0;
-	
-	out = ((float64)(temp&0x000fffffffffffffULL))/0x0010000000000000ULL + 1;
-	exp = ((temp>>52) & 0x7ff) - 1023;
-	
-	while (exp > 0) {out *= 2.0; exp--;}
-	while (exp < 0) {out /= 2.0; exp++;}
+    if (temp == 0x0000000000000000ULL) return  0.0;
+    if (temp == 0x7ff0000000000000ULL) return  1.0/0.0;
+    if (temp == 0xfff0000000000000ULL) return -1.0/0.0;
+    if ((temp & 0x7ff0000000000000ULL)==0x7ff0000000000000ULL) return 0.0/0.0;
+    
+    out = ((float64)(temp&0x000fffffffffffffULL))/0x0010000000000000ULL + 1;
+    exp = ((temp>>52) & 0x7ff) - 1023;
+    
+    while (exp > 0) {out *= 2.0; exp--;}
+    while (exp < 0) {out /= 2.0; exp++;}
 
-	if (temp & 0x8000000000000000ULL) out = -out;
-	return out;
+    if (temp & 0x8000000000000000ULL) out = -out;
+    return out;
 }
 
 #endif
@@ -154,47 +154,47 @@ static inline float64 unpackf64(void * b) {
 //only on a 16 bit machine would you be able to directly pack the raw value. 
 //I would optimize this later but if you're using extended precision floats you probably aren't focused on speed.
 static inline void packf80(void * b, float80 in) {
-	int shift = 0;	
-        uint16 exp = 0;
-	uint64 mant = 0;
+    int shift = 0;  
+    uint16 exp = 0;
+    uint64 mant = 0;
 
-	if (in != in) {exp = 0xffff; mant = 0xffffffffffffffffULL;}
-	else if (in == ( 1.0L/0.0L)) {exp = 0x7fff; mant = 0x8000000000000000ULL;}
-	else if (in == (-1.0L/0.0L)) {exp = 0xffff; mant = 0x8000000000000000ULL;}
-	else if (in != 0.0L) {
-		if (in < 0) {exp = 0x8000; in = -in;} 
+    if (in != in) {exp = 0xffff; mant = 0xffffffffffffffffULL;}
+    else if (in == ( 1.0L/0.0L)) {exp = 0x7fff; mant = 0x8000000000000000ULL;}
+    else if (in == (-1.0L/0.0L)) {exp = 0xffff; mant = 0x8000000000000000ULL;}
+    else if (in != 0.0L) {
+        if (in < 0) {exp = 0x8000; in = -in;} 
 
-		while (in >= 2.0L) {in /= 2.0L; shift++;}
-		while (in <  1.0L) {in *= 2.0L; shift--;}
+        while (in >= 2.0L) {in /= 2.0L; shift++;}
+        while (in <  1.0L) {in *= 2.0L; shift--;}
 
-		mant = in*(0x8000000000000000ULL+0.5L);
-		exp |= shift + 16383;
-	}
+        mant = in*(0x8000000000000000ULL+0.5L);
+        exp |= shift + 16383;
+    }
 
-	pack16(b,exp);
-	pack64(((uint16*)b)+1,mant);
+    pack16(b,exp);
+    pack64(((uint16*)b)+1,mant);
 }
 
 static inline float80 unpackf80(void * b) {
     int shift = 0;
-	uint16 exp = unpack16(b);
-	uint64 mant = unpack64(((uint16*)b)+1);
-	float80 out;
+    uint16 exp = unpack16(b);
+    uint64 mant = unpack64(((uint16*)b)+1);
+    float80 out;
 
-	if(exp == 0x0000 && mant == 0x0000000000000000ULL) return  0.0L;
-        if(exp == 0x7fff && mant == 0x8000000000000000ULL) return  1.0L/0.0L;
-	if(exp == 0xffff && mant == 0x8000000000000000ULL) return -1.0L/0.0L;
-	if((exp & 0x7fff)==0x7fff) return 0.0L/0.0L;
-	
+    if(exp == 0x0000 && mant == 0x0000000000000000ULL) return  0.0L;
+    if(exp == 0x7fff && mant == 0x8000000000000000ULL) return  1.0L/0.0L;
+    if(exp == 0xffff && mant == 0x8000000000000000ULL) return -1.0L/0.0L;
+    if((exp & 0x7fff)==0x7fff) return 0.0L/0.0L;
+    
 
-	out = ((float80)mant) / 0x8000000000000000ULL;
-	if (exp & 0x8000) out = -out;
-	shift = (exp & 0x7fff) - 16383;
-	
-	while (shift > 0) {out *= 2.0L; shift--;}
-	while (shift < 0) {out /= 2.0L; shift++;}
+    out = ((float80)mant) / 0x8000000000000000ULL;
+    if (exp & 0x8000) out = -out;
+    shift = (exp & 0x7fff) - 16383;
+    
+    while (shift > 0) {out *= 2.0L; shift--;}
+    while (shift < 0) {out /= 2.0L; shift++;}
 
-	return out;
+    return out;
 }
 
 #endif

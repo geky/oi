@@ -1,7 +1,6 @@
 // for windows use -lws2_32
-
 #ifndef OI_SOCKET
-#define OI_SOCKET
+#define OI_SOCKET 1
 #include "oi_address.h"
 
 #ifdef OI_WIN
@@ -18,53 +17,51 @@
 typedef SOCKET socket_t;
 
 static inline int socket_create(socket_t * s, int proto, int block) {
-	WSADATA data;
-	u_long blockval = block?0:1;
-	int opt = 0;
-	if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
+    WSADATA data;
+    u_long blockval = block?0:1;
+    int opt = 0;
+    if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
     if ((*s=socket(AF_INET6, proto,0))==-1) return 2;
-	if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
-	if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt)) return 4;
-    RETURN 0;
+    if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
+    if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt))) return 4;
+    return 0;
 }
 
 static inline int socket_create_ipv4(socket_t * s, int proto, int block) {
-	WSADATA data;
-	u_long blockval = block?0:1;
-	if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
+    WSADATA data;
+    u_long blockval = block?0:1;
+    if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
     if ((*s=socket(AF_INET, proto,0))==-1) return 2;
-	if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
-    RETURN 0;
+    if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
+    return 0;
 }
 
 static inline int socket_create_ipv6(socket_t * s, int proto, int block) {
-	WSADATA data;
-	u_long blockval = block?0:1;
-	int opt = 1;
-	if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
+    WSADATA data;
+    u_long blockval = block?0:1;
+    int opt = 1;
+    if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
     if ((*s=socket(AF_INET6, proto,0))==-1) return 2;
-	if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
-	if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt)) return 4;
-    RETURN 0;
+    if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
+    if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt))) return 4;
+    return 0;
 }
 
 static inline int socket_destroy(socket_t * s) {
     if(closesocket(*s)) return 1;
-	if(WSACleanup()) return 2;
-	return 0;
+    if(WSACleanup()) return 2;
+    return 0;
 }
 
 #else
 
 typedef int socket_t;
 
-static inline int socket_create(socket_t*s
-
 static inline int socket_create(socket_t * s, int proto, int block) {
-	int opt = 0;
+    int opt = 0;
     *s = socket(AF_INET6, proto, 0);
     if (block) fcntl(*s, F_SETFL, fcntl(*s, F_GETFL)&~O_NONBLOCK);
-	if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt)) return 4;
+    if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt))) return 4;
     return *s != -1;
 }
 
@@ -75,10 +72,10 @@ static inline int socket_create_ipv4(socket_t * s, int proto, int block) {
 }
 
 static inline int socket_create_ipv6(socket_t * s, int proto, int block) {
-	int opt = 1;
+    int opt = 1;
     *s = socket(AF_INET6, proto, 0);
     if (block) fcntl(*s, F_SETFL, fcntl(*s, F_GETFL)&~O_NONBLOCK);
-	if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt)) return 4;
+    if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt))) return 4;
     return *s != -1;
 }
 
@@ -89,18 +86,18 @@ static inline int socket_destroy(socket_t * s) {
 #endif
 
 static inline int socket_bind(socket_t * s, address_t * a) {
-	return bind(*s,(sockaddr*)a,sizeof(address_t));    
+    return bind(*s,(sockaddr*)a,sizeof(address_t));    
 }
 
 static inline int tcp_connect(socket_t * s, address_t * a) {
-	return connect(*s,(sockaddr*)a,sizeof(address_t));
+    return connect(*s,(sockaddr*)a,sizeof(address_t));
 }
 
 static inline int tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
-	int na_s = sizeof(address_t);
-	if (listen(*s,5)) return 2;
-	*ns = accept(*s,(sockaddr*)na,&na_s);
-	return (*ns == -1);
+    int na_s = sizeof(address_t);
+    if (listen(*s,5)) return 2;
+    *ns = accept(*s,(sockaddr*)na,&na_s);
+    return (*ns == -1);
 }
 
 static inline int tcp_send(socket_t * s, void * buf, size_t len) {
@@ -118,7 +115,7 @@ static inline int udp_send(socket_t * s, void * buf, size_t len, address_t * a) 
 }
 
 static inline int udp_rec(socket_t * s, void * buf, size_t len, size_t * inlen, address_t * a) {
-	int a_s = sizeof(address_t);
+    int a_s = sizeof(address_t);
     ssize_t rsize = recvfrom(*s,buf,len,0,(sockaddr*)a,&a_s);
     if (rsize >= 0 && inlen) *inlen = rsize;
     return rsize < 0;

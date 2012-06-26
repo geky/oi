@@ -1,5 +1,6 @@
+//requires -pthread on posix machines
 #ifndef OI_LOCAL
-#define OI_LOCAL
+#define OI_LOCAL 1
 #include "oi_os.h"
 
 #ifdef OI_WIN
@@ -7,20 +8,20 @@
 typedef DWORD local_t;
 
 static inline int local_create(local_t * i) {
-	*i = TlsAlloc();
-	return *i == -1;
+    *i = TlsAlloc();
+    return *i == -1;
 }
 
 static inline int local_destroy(local_t * i) {
-	return !TlsFree(*i);
+    return !TlsFree(*i);
 }
 
 static inline int local_set(local_t * i, void * val) {
-	return !TlsSetValue(*i,val);
+    return !TlsSetValue(*i,val);
 }
 
 static inline void * local_get(local_t * i) {
-	return TlsGetValue(*i);
+    return TlsGetValue(*i);
 }
 
 #else
@@ -29,19 +30,19 @@ static inline void * local_get(local_t * i) {
 typedef pthread_key_t local_t;
 
 static inline int local_create(local_t * i) {
-	return pthread_key_create(i,0);
+    return pthread_key_create(i,0);
 }
 
 static inline int local_destroy(local_t * i) {
-	return pthread_key_delete(*i);
+    return pthread_key_delete(*i);
 }
 
 static inline int local_set(local_t * i, void * val) {
-	return pthread_setspecific(*i,val);
+    return pthread_setspecific(*i,val);
 }
 
 static inline void * local_get(local_t * i) {
-	return pthread_getspecific(*i);
+    return pthread_getspecific(*i);
 }
 
 

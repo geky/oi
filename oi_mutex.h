@@ -1,5 +1,6 @@
+//requires -pthread on posix machines
 #ifndef OI_MUTEX
-#define OI_MUTEX
+#define OI_MUTEX 1
 #include "oi_os.h"
 
 #ifdef OI_WIN
@@ -7,27 +8,27 @@
 typedef CRITICAL_SECTION mutex_t;
 
 static inline int mutex_create(mutex_t * m) {
-	InitializeCriticalSection(m);
-	return 0;
+    InitializeCriticalSection(m);
+    return 0;
 }
 
 static inline int mutex_destroy(mutex_t * m) {
-	DeleteCriticalSection(m);
-	return 0;
+    DeleteCriticalSection(m);
+    return 0;
 }
 
 static inline int mutex_lock(mutex_t * m) {
-	EnterCriticalSection(m);
-	return 0;
+    EnterCriticalSection(m);
+    return 0;
 }
 
 static inline int mutex_try_lock(mutex_t * m) {
-	return !TryEnterCriticalSection(m);
+    return !TryEnterCriticalSection(m);
 }
 
 static inline int mutex_unlock(mutex_t * m) {
-	LeaveCriticalSection(m);
-	return 0;
+    LeaveCriticalSection(m);
+    return 0;
 }
 
 
@@ -44,19 +45,19 @@ static inline int mutex_create(mutex_t * m) {
 }
 
 static inline int mutex_destroy(mutex_t * m) {
-	return pthread_mutex_destroy(m);
+    return pthread_mutex_destroy(m);
 }
 
 static inline int mutex_lock(mutex_t * m) {
-	return pthread_mutex_lock(m);
+    return pthread_mutex_lock(m);
 }
 
 static inline int mutex_try_lock(mutex_t * m) {
-	return pthread_mutex_trylock(m);
+    return pthread_mutex_trylock(m);
 }
 
 static inline int mutex_unlock(mutex_t * m) {
-	return pthread_mutex_unlock(m);
+    return pthread_mutex_unlock(m);
 }
 
 #endif

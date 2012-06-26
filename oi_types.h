@@ -1,5 +1,5 @@
 #ifndef OI_TYPES
-#define OI_TYPES
+#define OI_TYPES 1
 
 #ifndef _MSC_VER
 #include "stdint.h"
