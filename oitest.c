@@ -380,19 +380,21 @@ void testcond() {
 	sleep(50); printf("\n");
 
 	mutex_lock(&m);
-	thread_terminate(&t1);
-	thread_terminate(&t2);
-	thread_destroy(&t1);
-	thread_destroy(&t2);
-        condcount = -1;
-	PRINT(time_out, TEST(1), "terminated ... waiting for timeout");
+    condcount = -1;
+	PRINT(time_out, "\n", "waiting for timeout...");
 	mutex_unlock(&m);
 
+	thread_join(&t2);
+	thread_destroy(&t2);
 	thread_join(&t3);
 	thread_destroy(&t3);
+	thread_terminate(&t1);
+	thread_destroy(&t1);
+	err = cond_signal_all(&c);
+	PRINT(destroy, TEST(!err), "terminating and signalling err %d", err);
 
 	err = cond_destroy(&c);
-	PRINT(destroy, TEST(!err), "destroying cond err %d", err);
+	PRINT( , TEST(!err), "destroying cond err %d", err);
 }
 
 int main(int argc, char ** argv) {

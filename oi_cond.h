@@ -149,11 +149,15 @@ static inline int cond_wait(cond_t * c, mutex_t * m) {
 
 static inline int cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     struct timespec time;
-    uint64 timems = millis() + ms;
+	struct timeval temp;
+	gettimeofday(&temp,0);
+    uint64 timems = temp.tv_sec;
+	timems *= 1000;
+	timems += (temp.tv_usec/1000) + ms;
     time.tv_nsec = (timems%1000) * 1000000;
     time.tv_sec = timems / 1000;
 	   
-    return pthread_cond_timedwait(c,m,&time);
+	return pthread_cond_timedwait(c,m,&time);
 }
 
 static inline int cond_signal_one(cond_t * c) {
