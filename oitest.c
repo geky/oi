@@ -312,6 +312,91 @@ void testrwlock() {
 	PRINT(destroy, TEST(!err), "destroying rwlock err %d", err);
 }
 
+#include "oi_cond.h"
+mutex_t * condpm;
+int condmax;
+int condcount;
+void testcondthread(void * p) {
+	cond_t * pc = (cond_t*)pc;
+	int err;
+
+	mutex_lock(condpm);
+	while (1) {
+		err = cond_wait(pc,condpm);
+		PRINT(wait, TEST(!err), "woken thread err %d", err);
+		condcount++;
+		PRINT( , TEST(condcount < condmax), "total signals = %d", condcount);
+	}
+}
+
+void testcondtimethread(void * p) {
+	cond_t * pc = (cond_t*)pc;
+	int err;
+
+	mutex_lock(condpm);
+	while (1) {
+		err = cond_timed_wait(pc,condpm,100);
+		if (condcount < 0) break;
+		PRINT(time_wait, TEST(!err), "woken thread err %d", err);
+		condcount++;
+		PRINT( , TEST(condcount < condmax), "total signals = %d", condcount);
+	}
+	
+	PRINT( , TEST(err), "woken thread err %d", err);
+	mutex_unlock(condpm);
+}
+
+
+void testcond() {
+	thread_t t1,t2,t3;
+	cond_t c;
+	mutex_t m;
+	int err;
+
+	BEGIN(oi_cond);
+	mutex_create(&m);
+	condpm = &m;
+	err = cond_create(&c);
+	PRINT(create, TEST(!err), "creating cond err %d", err);
+
+	thread_create(&t1,&testcondthread,&c);
+	thread_create(&t2,&testcondtimethread,&c);
+	thread_create(&t3,&testcondtimethread,&c);
+
+	mutex_lock(&m);
+	printf("\n");
+	condmax = 1;
+	condcount = 0;
+	err = cond_signal_one(&c);
+	PRINT(signal_one, TEST(!err), "signaling one err %d", err);
+	mutex_unlock(&m);
+
+	sleep(50);
+
+	mutex_lock(&m);
+	printf("\n");
+	condmax = 3;
+	condcount = 0;
+	err = cond_signal_all(&c);
+	PRINT(signal_all, TEST(!err), "signaling all err %d", err);
+	mutex_unlock(&m);
+
+	sleep(50);
+
+	mutex_lock(&m);
+	thread_terminate(&t1);
+	thread_terminate(&t2);
+	thread_destroy(&t1);
+	thread_destroy(&t2);
+	PRINT(time_out, TEST(1), "terminated successfully, waiting for timeout");
+	mutex_unlock(&m);
+
+	thread_join(&t3);
+	thread_destroy(&t3);
+
+	err = cond_destroy(&c);
+	PRINT(destroy, TEST(!err), "destroying cond err %d", err);
+}
 
 int main(int argc, char ** argv) {
 	
@@ -329,6 +414,7 @@ int main(int argc, char ** argv) {
             TESTF(mutex);
             TESTF(local);
 		TESTF(rwlock);
+		TESTF(cond);
 	}
 
 	if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");
