@@ -201,12 +201,18 @@ void testmutex() {
     err = mutex_lock(&m);
     PRINT(lock, TEST(!err), "locking mutex err %d", err);
     
+    
     thread_create(&t,&testmutexthread,&m);
     sleep(100);
+    
+    err = mutex_lock(&m);
+    PRINT(lock, TEST(!err), "locking mutex err %d", err);
     
     testmutexdata++;
     PRINT( , TEST(testmutexdata == 1), "data access 1 -> %d", testmutexdata);
     
+    err = mutex_unlock(&m);
+    PRINT(unlock, TEST(!err), "unlocking mutex err %d", err);
     err = mutex_unlock(&m);
     PRINT(unlock, TEST(!err), "unlocking mutex err %d", err);
     

@@ -72,11 +72,11 @@ static inline int rwlock_destroy(rwlock_t * rw) {
 }
 
 static inline int rwlock_read_lock(rwlock_t * rw) {
-	EnterCriticalSection(&rw->writer_lock);
+	EnterCriticalSection(&rw->write_lock);
 	EnterCriticalSection(&rw->count_lock);
 	if (!rw->count++) ResetEvent(rw->count_event);
 	LeaveCriticalSection(&rw->count_lock);
-	LeaveCriticalSection(&rw->writer_lock);
+	LeaveCriticalSection(&rw->write_lock);
 	return 0;
 }
 
@@ -91,21 +91,34 @@ static inline int rwlock_try_read_lock(rwlock_t * rw) {
 
 static inline int rwlock_read_unlock(rwlock_t * rw) {
 	EnterCriticalSection(&rw->count_lock);
-	if (!--rwlock->count) SetEvent(rw->count_event);
+	if (!--rw->count) SetEvent(rw->count_event);
 	LeaveCriticalSection(&rw->count_lock);
 	return 0;
 }
 
 static inline int rwlock_write_lock(rwlock_t * rw) {
 	EnterCriticalSection(&rw->write_lock);
-	if (!rw->count) WaitForSingleObject(rwlock->count_event, INFINITE);
+        EnterCriticalSection(&rw->count_lock);
+	if (rw->count) {
+            LeaveCriticalSection(&rw->count_lock);
+            WaitForSingleObject(rw->count_event, INFINITE);
+        } else {
+            LeaveCriticalSection(&rw->count_lock);
+        }
 	return 0;
 }
 
 static inline int rwlock_try_write_lock(rwlock_t * rw) {
 	if (!TryEnterCriticalSection(&rw->write_lock)) return 1;
-	if (!rw->count) WaitForSingleObject(rwlock->count_event, INFINITE);
-	return 0;
+        EnterCriticalSection(&rw->count_lock);
+	if (rw->count) {
+            LeaveCriticalSection(&rw->count_lock);
+            LeaveCriticalSection(&rw->write_lock);
+            return 2;
+        } else {
+            LeaveCriticalSection(&rw->count_lock);
+            return 0;
+        }
 }
 
 static inline int rwlock_write_unlock(rwlock_t * rw) {
