@@ -113,8 +113,6 @@ static inline int rwlock_write_unlock(rwlock_t * rw) {
 	return 0;
 }
 
-
-
 #endif
 #else
 #include <pthread.h>
