@@ -1,5 +1,4 @@
 // for windows use -lws2_32
-
 #ifndef OI_ADDRESS
 #define OI_ADDRESS 1
 #include "oi_os.h"
@@ -29,29 +28,29 @@ typedef union {
     struct sockaddr_in6 ipv6;
 } address_t;
 
-static inline int address_create_ipv4(address_t * a, void * ip, uint16 port) {
+oi_call address_create_ipv4(address_t * a, void * ip, uint16 port) {
     a->ipv4.sin_family = AF_INET;
     a->ipv4.sin_port = htons(port);
     if (ip) a->ipv4.sin_address = *(struct in_addr*)ip;
     return 0;
 }
 
-static inline int address_scan_ipv4(address_t * a, const char * s) {
+oi_call address_scan_ipv4(address_t * a, const char * s) {
     return inet_pton(AF_INET,s,&a->ipv4.sin_addr) != -1;
 }
 
-static inline int address_create_ipv6(address_t * a, void * ip, uint16 port) {
+oi_call address_create_ipv6(address_t * a, void * ip, uint16 port) {
     a->ipv6.sin_family = AF_INET6;
     a->ipv6.sin_port = htons(port);
     if (ip) a->ipv4.sin_address = *(struct in_addr6*)ip;
     return 0;
 }
 
-static inline int address_scan_ipv6(address_t * a, const char * s) {
+oi_call address_scan_ipv6(address_t * a, const char * s) {
     return inet_pton(AF_INET6,s,&a->ipv6.sin_addr) != -1;
 }
 
-static inline int address_lookup(address_t * a, const char * s) {
+oi_call address_lookup(address_t * a, const char * s) {
     struct addrinfo * result;
     if (getaddrinfo(s,0,0,&result)) return 1;
     a->raw = *(result->ai_addr);
@@ -59,7 +58,7 @@ static inline int address_lookup(address_t * a, const char * s) {
     return 0;
 }
 
-static inline int name_lookup(address_t * a, char * s, size_t len) {
+oi_call name_lookup(address_t * a, char * s, size_t len) {
     return getnameinfo(&a->raw,sizeof(address_t),s,len,0,0,0);
 }
 

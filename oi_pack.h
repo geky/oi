@@ -1,43 +1,42 @@
 #ifndef OI_PACK
 #define OI_PACK 1
-
 #include "oi_os.h"
+#include "oi_types.h"
+
 #ifdef OI_WIN
 #include "winsock2.h"
 #endif
-#include "oi_types.h"
 
-
-static inline void pack8(void * b, uint8 in) {
+oi_func void pack8(void * b, uint8 in) {
     *(uint8*)b = in;
 }
 
-static inline uint8 unpack8(void * b) {
+oi_func uint8 unpack8(void * b) {
     return *(uint8*)b;
 }
 
-static inline void pack16(void * b, uint16 in) {
+oi_func void pack16(void * b, uint16 in) {
     *(uint16*)b = htons(in);
 }
 
-static inline uint16 unpack16(void * b) {
+oi_func uint16 unpack16(void * b) {
     return ntohs(*(uint16*)b);
 }
 
-static inline void pack32(void * b, uint32 in) {
+oi_func void pack32(void * b, uint32 in) {
     *(uint32*)b = htonl(in);
 }
 
-static inline uint32 unpack32(void * b) {
+oi_func uint32 unpack32(void * b) {
     return ntohl(*(uint32*)b);
 }
 
-static inline void pack64(void * b, uint64 in) {
+oi_func void pack64(void * b, uint64 in) {
     pack32(b,(uint32)(in>>32));
     pack32((uint32*)b+1,(uint32)in);
 }
 
-static inline uint64 unpack64(void * b) {
+oi_func uint64 unpack64(void * b) {
     return ((uint64)unpack32(b)) << 32 | unpack32(((uint32*)b)+1);
 
 }
@@ -48,27 +47,27 @@ static inline uint64 unpack64(void * b) {
 
 #if defined(__STDC_IEC_559__) || ((__FLT_MANT_DIG__ == 24) && (__DBL_MANT_DIG__ == 53))
 
-static inline void packf32(void * b, float32 in) {
+oi_func void packf32(void * b, float32 in) {
     pack32(b,*(uint32*)&in); 
 }
 
-static inline float32 unpackf32(void * b) {
+oi_func float32 unpackf32(void * b) {
     uint32 temp = unpack32(b);
     return *(float32*)&temp;
 }
 
-static inline void packf64(void * b, float64 in) {
+oi_func void packf64(void * b, float64 in) {
     pack64(b,*(uint64*)&in);
 }
 
-static inline float64 unpackf64(void * b) {
+oi_func float64 unpackf64(void * b) {
     uint64 temp = unpack64(b);
     return *(float64*)&temp;
 }
 
 #else
 
-static inline void packf32(void * b, float32 in) {
+oi_func void packf32(void * b, float32 in) {
     int exp = 0;    
     uint32 temp = 0;
 
@@ -88,7 +87,7 @@ static inline void packf32(void * b, float32 in) {
     pack32(b,temp);
 }
 
-static inline float32 unpackf32(void * b) {
+oi_func float32 unpackf32(void * b) {
     int exp;
     float32 out;
     uint32 temp = unpack32(b);
@@ -108,7 +107,7 @@ static inline float32 unpackf32(void * b) {
     return out;
 }
 
-static inline void packf64(void * b, float64 in) {
+oi_func void packf64(void * b, float64 in) {
     int exp = 0;    
     uint64 temp = 0;
 
@@ -128,7 +127,7 @@ static inline void packf64(void * b, float64 in) {
     pack64(b,temp);
 }
 
-static inline float64 unpackf64(void * b) {
+oi_func float64 unpackf64(void * b) {
     int exp;
     float64 out;
     uint64 temp = unpack64(b);
@@ -153,7 +152,7 @@ static inline float64 unpackf64(void * b) {
 //just manually putting into IEEE float form due to overabundance of issues with padding, endianess, and floating point implementations.... 
 //only on a 16 bit machine would you be able to directly pack the raw value. 
 //I would optimize this later but if you're using extended precision floats you probably aren't focused on speed.
-static inline void packf80(void * b, float80 in) {
+oi_func void packf80(void * b, float80 in) {
     int shift = 0;  
     uint16 exp = 0;
     uint64 mant = 0;
@@ -175,7 +174,7 @@ static inline void packf80(void * b, float80 in) {
     pack64(((uint16*)b)+1,mant);
 }
 
-static inline float80 unpackf80(void * b) {
+oi_func float80 unpackf80(void * b) {
     int shift = 0;
     uint16 exp = unpack16(b);
     uint64 mant = unpack64(((uint16*)b)+1);

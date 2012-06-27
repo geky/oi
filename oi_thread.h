@@ -20,27 +20,27 @@ static unsigned int __stdcall _ud_thread_handler(void * args) {
     return 0;
 }
 
-static inline int thread_create(thread_t * t, void (*r)(void*), void * a) {
+oi_call thread_create(thread_t * t, void (*r)(void*), void * a) {
     t->func = r;
     t->data = a;
     t->i = (HANDLE)_beginthreadex(0,0,&_ud_thread_handler,t,0,0);
     return !t->i;
 }
 
-static inline int thread_destroy(thread_t * t) {
+oi_call thread_destroy(thread_t * t) {
     return !CloseHandle(t->i);
 }
 
-static inline int thread_join(thread_t * t)  {
+oi_call thread_join(thread_t * t)  {
     return WaitForSingleObject(t->i,INFINITE) != WAIT_OBJECT_0;
 }
 
-static inline int thread_yield() {
+oi_call thread_yield() {
     Sleep(0);
     return 0;
 }
 
-static inline int thread_terminate(thread_t * t) {
+oi_call thread_terminate(thread_t * t) {
     return !TerminateThread(t->i, 0);
 }
 
@@ -62,25 +62,25 @@ void * _ud_thread_handler(void * args) {
     return 0;
 }
 
-static inline int thread_create(thread_t * t, void (*r)(void*), void * a) {
+oi_call thread_create(thread_t * t, void (*r)(void*), void * a) {
     t->func = r;
     t->data = a;
     return pthread_create(&t->i,0,&_ud_thread_handler,t);
 }
 
-static inline int thread_destroy() {
+oi_call thread_destroy() {
     return 0;
 }
 
-static inline int thread_join(thread_t * t) {
+oi_call thread_join(thread_t * t) {
     return pthread_join(t->i,0);
 }
 
-static inline int thread_yield() {
+oi_call thread_yield() {
     return sched_yield();
 }
 
-static inline int thread_terminate(thread_t * t) {
+oi_call thread_terminate(thread_t * t) {
     return pthread_cancel(t->i);
 }
 

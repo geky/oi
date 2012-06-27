@@ -7,7 +7,7 @@
 
 #ifdef OI_WIN
 
-static inline uint64 millis(void) {
+oi_func uint64 millis(void) {
     FILETIME temp;
     GetSystemTimeAsFileTime(&temp);
     uint64 ret = temp.dwHighDateTime;
@@ -16,7 +16,7 @@ static inline uint64 millis(void) {
     return (ret/10000) - 11644473600000ULL; 
 }
 
-static inline int sleep(unsigned int ms) {
+oi_call sleep(unsigned int ms) {
     Sleep(ms);
     return 0;   
 }
@@ -26,7 +26,7 @@ static inline int sleep(unsigned int ms) {
 #include <pthread.h>
 #include <sys/time.h>
 
-static inline uint64 millis(void) {
+oi_func uint64 millis(void) {
     struct timeval temp;
     gettimeofday(&temp,0);
     uint64 ret = temp.tv_sec;
@@ -35,7 +35,7 @@ static inline uint64 millis(void) {
     return ret;
 }
 
-static inline int sleep(unsigned int ms) {
+oi_call sleep(unsigned int ms) {
     struct timespec time;
     uint64 timems = millis() + ms;
     time.tv_nsec = (timems%1000) * 1000000;

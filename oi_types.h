@@ -1,5 +1,6 @@
 #ifndef OI_TYPES
 #define OI_TYPES 1
+#include "oi_os.h"
 
 #ifndef OI_VISUAL_STUDIO
 #include "stdint.h"
@@ -24,9 +25,16 @@ typedef unsigned __int64 uint64;
 
 typedef float float32;
 typedef double float64;
-
 //please note float80 support on most systems tends to be subpar.
 //the biggest instance is windows in which float80 is as precise as float32
 typedef long double float80;
+
+#ifndef OI_VISUAL_STUDIO
+#define oi_func static inline
+#else
+#define oi_func static __inline
+#endif
+
+#define oi_call oi_func int
 
 #endif

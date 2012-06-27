@@ -33,7 +33,7 @@ void testos() {
 #if defined(OI_WIN)
     PRINT("system",TEST(1),"Windows");
 #elif defined(OI_LINUX)
-    PRINT("system"",TEST(1),"Linux");
+    PRINT("system",TEST(1),"Linux");
 #elif defined(OI_MAC)
     PRINT("system",TEST(1),"Macintosh");
 #elif defined(OI_FreeBSD)

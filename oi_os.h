@@ -23,13 +23,4 @@
 #   warning oi does not recognize OS
 #   define OI_UNKNOWN_OS
 #endif
-
-#ifdef OI_VISUAL_STUDIO
-#define oi_func static __inline
-#else
-#define oi_func static inline
-#endif
-
-#define oi_call oi_func int
-
 #endif

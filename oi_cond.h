@@ -10,29 +10,29 @@
 
 typedef CONDITION_VARIABLE cond_t;
 
-static inline int cond_create(cond_t * c) {
+oi_call cond_create(cond_t * c) {
     InitializeConditionVariable(c);
     return 0;
 }
 
-static inline int cond_destroy(cond_t * c) {
+oi_call cond_destroy(cond_t * c) {
     return 0;
 }
 
-static inline int cond_wait(cond_t * c, mutex_t * m) {
+oi_call cond_wait(cond_t * c, mutex_t * m) {
     return !SleepConditionVariableCS(c,m,INFINITE);
 }
 
-static inline int cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
+oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     return !SleepconditionVariableCS(c,m,ms);
 }
 
-static inline int cond_signal_one(cond_t * c) {
+oi_call cond_signal_one(cond_t * c) {
     WakeConditionVariable(c);
     return 0;
 }
 
-static inline int cond_signal_all(cond_t * c) {
+oi_call cond_signal_all(cond_t * c) {
     WakeAllConditionVariable(c);
     return 0;
 }
@@ -47,7 +47,7 @@ typedef struct {
     int count;
 } cond_t;
 
-static inline int cond_create(cond_t * c) {
+oi_call cond_create(cond_t * c) {
     c->count = 0;
     c->unlocking = 0;
     c->event = CreateEvent(0,1,1,0);
@@ -55,12 +55,12 @@ static inline int cond_create(cond_t * c) {
     return 0;
 }
 
-static inline int cond_destroy(cond_t * c) {
+oi_call cond_destroy(cond_t * c) {
     DeleteCriticalSection(&c->lock);
     return !CloseHandle(c->event);
 }
 
-static inline int cond_wait(cond_t * c, mutex_t * m) {
+oi_call cond_wait(cond_t * c, mutex_t * m) {
     EnterCriticalSection(&c->lock);
     c->count++;
     LeaveCriticalSection(&c->lock);
@@ -83,7 +83,7 @@ static inline int cond_wait(cond_t * c, mutex_t * m) {
     }
 }
 
-static inline int cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
+oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     EnterCriticalSection(&c->lock);
     c->count++;
     LeaveCriticalSection(&c->lock);
@@ -113,7 +113,7 @@ static inline int cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     }
 }
 
-static inline int cond_signal_one(cond_t * c) {
+oi_call cond_signal_one(cond_t * c) {
     EnterCriticalSection(&c->lock);
     c->unlocking = 1;
     SetEvent(c->event);
@@ -121,7 +121,7 @@ static inline int cond_signal_one(cond_t * c) {
     return 0;
 }
 
-static inline int cond_signal_all(cond_t * c) {
+oi_call cond_signal_all(cond_t * c) {
     EnterCriticalSection(&c->lock);
     c->unlocking = c->count;
     SetEvent(c->event);
@@ -136,19 +136,19 @@ static inline int cond_signal_all(cond_t * c) {
 
 typedef pthread_cond_t cond_t;
 
-static inline int cond_create(cond_t * c) {
+oi_call cond_create(cond_t * c) {
     return pthread_cond_init(c,0);
 }
 
-static inline int cond_destroy(cond_t * c) {
+oi_call cond_destroy(cond_t * c) {
     return pthread_cond_destroy(c);
 }
 
-static inline int cond_wait(cond_t * c, mutex_t * m) {
+oi_call cond_wait(cond_t * c, mutex_t * m) {
     return pthread_cond_wait(c,m);
 }
 
-static inline int cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
+oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     struct timespec time;
     struct timeval temp;
     gettimeofday(&temp,0);
@@ -161,11 +161,11 @@ static inline int cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     return pthread_cond_timedwait(c,m,&time);
 }
 
-static inline int cond_signal_one(cond_t * c) {
+oi_call cond_signal_one(cond_t * c) {
     return pthread_cond_signal(c);
 }
 
-static inline int cond_signal_all(cond_t * c) {
+oi_call cond_signal_all(cond_t * c) {
     return pthread_cond_broadcast(c);
 }
 
