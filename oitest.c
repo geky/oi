@@ -5,7 +5,6 @@
 
 char memmm[2][40];
 volatile char rrr = 0;
-#define BEGIN(xx) printf("\n"#xx" :\n")
 #define PRINT(tt, test, ss,xx...) {char arrrr[42]; sprintf(arrrr,ss, ##xx); printf("\t%-10s: %-40s %s",#tt,arrrr,test);}
 #define TEST(yy) ((yy) ? ": success\n" : (rrr=1, ": FAILURE!\n"))
 
@@ -21,7 +20,6 @@ const char * MEM(int b, void * p, int len) {
 
 #include "oi_os.h"
 void testos() {
-	BEGIN(oi_os);
 #if defined(OI_WIN)
 	PRINT(system,TEST(1),"Windows");
 #elif defined(OI_LINUX)
@@ -48,7 +46,6 @@ void testtypes(void) {
 	int32 i32 = (int32)(ui32/2);
 	int64 i64 = (int64)(ui64/2);
 
-	BEGIN(oi_types);
 	PRINT(int8, TEST(i8 == 0x7f && sizeof(int8) == 1), "size = %-2d max = %d", sizeof(int8), i8);
 	PRINT(uint8, TEST(ui8 == 0xff && sizeof(uint8) == 1), "size = %-2d max = %u", sizeof(uint8), ui8);
 	PRINT(int16, TEST(i16 == 0x7fff && sizeof(int16) == 2), "size = %-2d max = %d", sizeof(int16), i16);
@@ -89,7 +86,6 @@ void testpack() {
         PRINT(pack##n, TEST(*(uint8*)data == 0x12), "%s -> %s", MEM(0,&i##n,sizeof i##n), MEM(1,data, sizeof i##n));\
 	PRINT(unpack##n, TEST(i##n == o##n), "%s <-", MEM(0,&o##n,sizeof i##n));
 
-	BEGIN(oi_pack);
 	PACKTEST(8);
 	PACKTEST(16);
 	PACKTEST(32);
@@ -120,7 +116,6 @@ void testtime() {
     int err;
     uint64 b,a;
     
-    BEGIN(oi_time);
     b=millis();
     PRINT(millis, "\n", "before -> %llu", b);
     PRINT(sleep, TEST(!err), "sleep(1500) err %d", err=sleep(1500));
@@ -147,7 +142,6 @@ void testthreadthread(void * a) {
 
 
 void testthread() {
-    BEGIN(oi_thread);
     thread_t t1,t2;
     int err;
     err = thread_create(&t1,&testthreadthread, (void*)1);
@@ -166,6 +160,44 @@ void testthread() {
     PRINT(destroy, TEST(!err), "destroying thread %d err %d", 1, err);
     err = thread_destroy(&t2);
     PRINT(      , TEST(!err), "destroying thread %d err %d", 2, err);
+}
+
+
+#include "oi_local.h"
+
+void testlocalthread(void * p) {
+    local_t * lp = (local_t*)p;
+    int err;
+    int temp;
+    
+    err = local_set(lp,(void*)2);
+    PRINT(set, "\n", "setting value to 2");
+    temp = (int)local_get(lp);
+    PRINT(get, TEST(temp == 2), "thread 2 value is %d", temp);
+}
+
+void testlocal() {
+    local_t l;
+    thread_t t;
+    int err;
+    int temp;
+    
+    err = local_create(&l);
+    PRINT(create, TEST(!err), "creating local err %d", err);
+    err = local_set(&l,(void*)1);
+    PRINT(set, "\n", "setting value to 1");
+    temp = (int)local_get(&l);
+    PRINT(get, TEST(temp == 1), "thread 1 value is %d", temp);
+    
+    thread_create(&t,&testlocalthread,&l);
+    thread_join(&t);
+    thread_destroy(&t);
+    
+    temp = (int)local_get(&l);
+    PRINT(get, TEST(temp == 1), "thread 1 value is %d", temp);
+    err = local_create(&l);
+    PRINT(destroy, TEST(!err), "destroying local err %d", err);
+    
 }
 
 #include "oi_mutex.h"
@@ -194,7 +226,6 @@ void testmutex() {
 
     
     testmutexdata = 0;
-    BEGIN(oi_mutex);
     
     err = mutex_create(&m);
     PRINT(create, TEST(!err), "creating mutex err %d", err);
@@ -203,7 +234,7 @@ void testmutex() {
     
     
     thread_create(&t,&testmutexthread,&m);
-    sleep(100);
+    sleep(100); printf("\n");
     
     err = mutex_lock(&m);
     PRINT(lock, TEST(!err), "locking mutex err %d", err);
@@ -222,43 +253,7 @@ void testmutex() {
     PRINT(delete, TEST(!err), "destroying mutex err %d", err);
 }
 
-#include "oi_local.h"
 
-void testlocalthread(void * p) {
-    local_t * lp = (local_t*)p;
-    int err;
-    int temp;
-    
-    err = local_set(lp,(void*)2);
-    PRINT(set, "\n", "setting value to 2");
-    temp = (int)local_get(lp);
-    PRINT(get, TEST(temp == 2), "thread 2 value is %d", temp);
-}
-
-void testlocal() {
-    local_t l;
-    thread_t t;
-    int err;
-    int temp;
-    
-    BEGIN(oi_local);
-    err = local_create(&l);
-    PRINT(create, TEST(!err), "creating local err %d", err);
-    err = local_set(&l,(void*)1);
-    PRINT(set, "\n", "setting value to 1");
-    temp = (int)local_get(&l);
-    PRINT(get, TEST(temp == 1), "thread 1 value is %d", temp);
-    
-    thread_create(&t,&testlocalthread,&l);
-    thread_join(&t);
-    thread_destroy(&t);
-    
-    temp = (int)local_get(&l);
-    PRINT(get, TEST(temp == 1), "thread 1 value is %d", temp);
-    err = local_create(&l);
-    PRINT(destroy, TEST(!err), "destroying local err %d", err);
-    
-}
 
 #include "oi_rwlock.h"
 
@@ -270,7 +265,7 @@ void testrwlockthread(void * d) {
 	PRINT(try_read, TEST(err), "read thread trying lock err %d", err);
 	err = rwlock_read_lock(prw);
 	PRINT(read_lock, TEST(!err), "read thread locking err %d", err);
-	sleep(100);
+	sleep(100); printf("\n");
 	
 	err = rwlock_read_lock(prw);
 	PRINT(read_lock, TEST(!err), "read thread 2nd locking err %d", err);
@@ -283,9 +278,7 @@ void testrwlockthread(void * d) {
 void testrwlock() {
 	thread_t t1,t2;
 	rwlock_t rw;
-	int err;
-
-	BEGIN(oi_rwlock);
+	int err;;
 
 	err = rwlock_create(&rw);
 	PRINT(create, TEST(!err), "creating rwlock err %d", err);
@@ -295,12 +288,12 @@ void testrwlock() {
 	thread_create(&t1,&testrwlockthread,&rw);
 	thread_create(&t2,&testrwlockthread,&rw);
 
-	sleep(50);
+	sleep(50); printf("\n");
 
 	err = rwlock_write_unlock(&rw);
 	PRINT(write_unlk, TEST(!err), "write thread unlocking err %d", err);
 
-	sleep(50);
+	sleep(50); printf("\n");
 
 	err = rwlock_try_write_lock(&rw);
 	PRINT(try_write, TEST(err), "write thread trying lock err %d", err);
@@ -323,7 +316,7 @@ mutex_t * condpm;
 int condmax;
 int condcount;
 void testcondthread(void * p) {
-	cond_t * pc = (cond_t*)pc;
+	cond_t * pc = (cond_t*)p;
 	int err;
 
 	mutex_lock(condpm);
@@ -331,12 +324,12 @@ void testcondthread(void * p) {
 		err = cond_wait(pc,condpm);
 		PRINT(wait, TEST(!err), "woken thread err %d", err);
 		condcount++;
-		PRINT( , TEST(condcount < condmax), "total signals = %d", condcount);
+		PRINT( , TEST(condcount <= condmax), "total signals = %d", condcount);
 	}
 }
 
 void testcondtimethread(void * p) {
-	cond_t * pc = (cond_t*)pc;
+	cond_t * pc = (cond_t*)p;
 	int err;
 
 	mutex_lock(condpm);
@@ -345,7 +338,7 @@ void testcondtimethread(void * p) {
 		if (condcount < 0) break;
 		PRINT(time_wait, TEST(!err), "woken thread err %d", err);
 		condcount++;
-		PRINT( , TEST(condcount < condmax), "total signals = %d", condcount);
+		PRINT( , TEST(condcount <= condmax), "total signals = %d", condcount);
 	}
 	
 	PRINT( , TEST(err), "woken thread err %d", err);
@@ -359,7 +352,6 @@ void testcond() {
 	mutex_t m;
 	int err;
 
-	BEGIN(oi_cond);
 	mutex_create(&m);
 	condpm = &m;
 	err = cond_create(&c);
@@ -370,31 +362,30 @@ void testcond() {
 	thread_create(&t3,&testcondtimethread,&c);
 
 	mutex_lock(&m);
-	printf("\n");
 	condmax = 1;
 	condcount = 0;
 	err = cond_signal_one(&c);
 	PRINT(signal_one, TEST(!err), "signaling one err %d", err);
 	mutex_unlock(&m);
 
-	sleep(50);
+	sleep(50); printf("\n");
 
 	mutex_lock(&m);
-	printf("\n");
 	condmax = 3;
 	condcount = 0;
 	err = cond_signal_all(&c);
 	PRINT(signal_all, TEST(!err), "signaling all err %d", err);
 	mutex_unlock(&m);
 
-	sleep(50);
+	sleep(50); printf("\n");
 
 	mutex_lock(&m);
 	thread_terminate(&t1);
 	thread_terminate(&t2);
 	thread_destroy(&t1);
 	thread_destroy(&t2);
-	PRINT(time_out, TEST(1), "terminated successfully, waiting for timeout");
+        condcount = -1;
+	PRINT(time_out, TEST(1), "terminated ... waiting for timeout");
 	mutex_unlock(&m);
 
 	thread_join(&t3);
@@ -410,17 +401,17 @@ int main(int argc, char ** argv) {
 	
 	for (;argc > 0; argc--) {	
 
-#define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) test##file();
+#define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf("\noi_"#file" :\n"); test##file();}
 	
 	    TESTF(os);
 	    TESTF(types);
             TESTF(pack);
 	    TESTF(time);
 	    TESTF(thread);
-            TESTF(mutex);
             TESTF(local);
-		TESTF(rwlock);
-		TESTF(cond);
+            TESTF(mutex);
+            TESTF(rwlock);
+            TESTF(cond);
 	}
 
 	if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");

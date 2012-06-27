@@ -47,7 +47,7 @@ typedef struct {
 } cond_t;
 
 static inline int cond_create(cond_t * c) {
-	c->cound = 0;
+	c->count = 0;
 	c->unlocking = 0;
 	c->event = CreateEvent(0,1,1,0);
 	InitializeCriticalSection(&c->lock);
@@ -56,7 +56,7 @@ static inline int cond_create(cond_t * c) {
 
 static inline int cond_destroy(cond_t * c) {
 	DeleteCriticalSection(&c->lock);
-	return CloseHandle(c->event);
+	return !CloseHandle(c->event);
 }
 
 static inline int cond_wait(cond_t * c, mutex_t * m) {
@@ -66,19 +66,19 @@ static inline int cond_wait(cond_t * c, mutex_t * m) {
 	LeaveCriticalSection(m);
 
 	while(1) {
+                Sleep(0); //give other threads a chance to consume signal
 		WaitForSingleObject(c->event,INFINITE);
 
-		EnterCriticalSection(m);
 		EnterCriticalSection(&c->lock);
 		if (c->unlocking) {
 			if(!--c->unlocking)
 				ResetEvent(c->event);
 			c->count--;
 			LeaveCriticalSection(&c->lock);
+                        EnterCriticalSection(m);
 			return 0;
 		}
 		LeaveCriticalSection(&c->lock);
-		LeaveCriticalSection(m);
 	}
 }
 
@@ -89,40 +89,41 @@ static inline int cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
 	LeaveCriticalSection(m);
 
 	while(1) {
+                Sleep(0); //give other threads a chance to consume signal
 		if (WaitForSingleObject(c->event,ms) == WAIT_TIMEOUT) {
-			EnterCriticalSection(m);
 			EnterCriticalSection(&c->lock);
 			c->count--;
 			LeaveCriticalSection(&c->lock);
+                        EnterCriticalSection(m);
 			return 1;
 		}
 
-		EnterCriticalSection(m);
+	
 		EnterCriticalSection(&c->lock);
 		if (c->unlocking) {
 			if (!--c->unlocking)
 				ResetEvent(c->event);
 			c->count--;
 			LeaveCriticalSection(&c->lock);
+                        EnterCriticalSection(m);
 			return 0;
 		}
-		LeaveCriticalSection(&c->lock);
-		LeaveCriticalSection(m);
+                LeaveCriticalSection(&c->lock);
 	}
 }
 
 static inline int cond_signal_one(cond_t * c) {
 	EnterCriticalSection(&c->lock);
+        c->unlocking = 1;
 	SetEvent(c->event);
-	c->unlocking = 1;
 	LeaveCriticalSection(&c->lock);
 	return 0;
 }
 
 static inline int cond_signal_all(cond_t * c) {
 	EnterCriticalSection(&c->lock);
-	SetEvent(c->event);
 	c->unlocking = c->count;
+	SetEvent(c->event);
 	LeaveCriticalSection(&c->lock);
 	return 0;
 }
