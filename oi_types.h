@@ -1,7 +1,7 @@
 #ifndef OI_TYPES
 #define OI_TYPES 1
 
-#ifndef _MSC_VER
+#ifndef OI_VISUAL_STUDIO
 #include "stdint.h"
 typedef int8_t   int8;
 typedef uint8_t  uint8;

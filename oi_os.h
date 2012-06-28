@@ -3,6 +3,9 @@
 
 #if defined(_WIN32) || defined(__WIN32__)
 #   define OI_WIN
+#   ifdef _MSC_VER
+#   define OI_VISUAL_STUDIO
+#   endif
 #   ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN
 #   endif
@@ -20,5 +23,13 @@
 #   warning oi does not recognize OS
 #   define OI_UNKNOWN_OS
 #endif
+
+#ifdef OI_VISUAL_STUDIO
+#define oi_func static __inline
+#else
+#define oi_func static inline
 #endif
 
+#define oi_call oi_func int
+
+#endif
