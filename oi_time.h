@@ -9,8 +9,9 @@
 
 oi_func uint64 millis(void) {
     FILETIME temp;
+	uint64 ret;
     GetSystemTimeAsFileTime(&temp);
-    uint64 ret = temp.dwHighDateTime;
+    ret = temp.dwHighDateTime;
     ret <<= 32;
     ret |= temp.dwLowDateTime;
     return (ret/10000) - 11644473600000ULL; 

@@ -3,9 +3,12 @@
 #include "oi_os.h"
 #include "oi_types.h"
 
+#include <float.h>
+
 #ifdef OI_WIN
 #include "winsock2.h"
 #endif
+
 
 oi_func void pack8(void * b, uint8 in) {
     *(uint8*)b = in;
@@ -41,7 +44,6 @@ oi_func uint64 unpack64(void * b) {
 
 }
 
-#include <float.h>
 //if the mantissa sizes matches IEEE specification it is most likely IEEE 754 
 // which is what we want
 
@@ -72,8 +74,8 @@ oi_func void packf32(void * b, float32 in) {
     uint32 temp = 0;
 
     if (in != in) temp = 0xffffffff;
-    else if (in == ( 1.0f/0.0f)) temp = 0x7f800000;
-    else if (in == (-1.0f/0.0f)) temp = 0xff800000;
+    else if (in == INFINITY) temp = 0x7f800000;
+    else if (in ==-INFINITY) temp = 0xff800000;
     else if (in != 0) {
         if (in < 0.0f) {temp = 0x80000000; in = -in;} 
                 
@@ -93,9 +95,9 @@ oi_func float32 unpackf32(void * b) {
     uint32 temp = unpack32(b);
 
     if (temp == 0x00000000) return  0.0f;
-    if (temp == 0x7f800000) return  1.0f/0.0f;
-    if (temp == 0xff800000) return -1.0f/0.0f;
-    if ((temp & 0x7f800000)==0x7f800000) return 0.0f/0.0f;
+    if (temp == 0x7f800000) return  (float32)INFINITY;
+    if (temp == 0xff800000) return -(float32)INFINITY;
+    if ((temp & 0x7f800000)==0x7f800000) return (float32)NAN;
     
     out = ((float32)(temp&0x007fffff))/0x00800000 + 1;
     exp = ((temp>>23) & 0xff) - 127;
@@ -112,8 +114,8 @@ oi_func void packf64(void * b, float64 in) {
     uint64 temp = 0;
 
     if (in != in) temp = 0xffffffffffffffffULL;
-    else if (in == ( 1.0/0.0)) temp = 0x7ff0000000000000ULL;
-    else if (in == (-1.0/0.0)) temp = 0xfff0000000000000ULL;
+    else if (in == INFINITY) temp = 0x7ff0000000000000ULL;
+    else if (in ==-INFINITY) temp = 0xfff0000000000000ULL;
     else if (in != 0.0) {
         if (in < 0) {temp = 0x8000000000000000ULL; in = -in;} 
 
@@ -133,9 +135,9 @@ oi_func float64 unpackf64(void * b) {
     uint64 temp = unpack64(b);
 
     if (temp == 0x0000000000000000ULL) return  0.0;
-    if (temp == 0x7ff0000000000000ULL) return  1.0/0.0;
-    if (temp == 0xfff0000000000000ULL) return -1.0/0.0;
-    if ((temp & 0x7ff0000000000000ULL)==0x7ff0000000000000ULL) return 0.0/0.0;
+    if (temp == 0x7ff0000000000000ULL) return  INFINITY;
+    if (temp == 0xfff0000000000000ULL) return -INFINITY;
+    if ((temp & 0x7ff0000000000000ULL)==0x7ff0000000000000ULL) return NAN;
     
     out = ((float64)(temp&0x000fffffffffffffULL))/0x0010000000000000ULL + 1;
     exp = ((temp>>52) & 0x7ff) - 1023;
@@ -158,15 +160,15 @@ oi_func void packf80(void * b, float80 in) {
     uint64 mant = 0;
 
     if (in != in) {exp = 0xffff; mant = 0xffffffffffffffffULL;}
-    else if (in == ( 1.0L/0.0L)) {exp = 0x7fff; mant = 0x8000000000000000ULL;}
-    else if (in == (-1.0L/0.0L)) {exp = 0xffff; mant = 0x8000000000000000ULL;}
+    else if (in == INFINITY) {exp = 0x7fff; mant = 0x8000000000000000ULL;}
+    else if (in ==-INFINITY) {exp = 0xffff; mant = 0x8000000000000000ULL;}
     else if (in != 0.0L) {
         if (in < 0) {exp = 0x8000; in = -in;} 
 
         while (in >= 2.0L) {in /= 2.0L; shift++;}
         while (in <  1.0L) {in *= 2.0L; shift--;}
 
-        mant = in*(0x8000000000000000ULL+0.5L);
+        mant = (uint64)(in*(0x8000000000000000ULL+0.5L));
         exp |= shift + 16383;
     }
 
@@ -181,9 +183,9 @@ oi_func float80 unpackf80(void * b) {
     float80 out;
 
     if(exp == 0x0000 && mant == 0x0000000000000000ULL) return  0.0L;
-    if(exp == 0x7fff && mant == 0x8000000000000000ULL) return  1.0L/0.0L;
-    if(exp == 0xffff && mant == 0x8000000000000000ULL) return -1.0L/0.0L;
-    if((exp & 0x7fff)==0x7fff) return 0.0L/0.0L;
+    if(exp == 0x7fff && mant == 0x8000000000000000ULL) return  INFINITY;
+    if(exp == 0xffff && mant == 0x8000000000000000ULL) return -INFINITY;
+    if((exp & 0x7fff)==0x7fff) return NAN;
     
 
     out = ((float80)mant) / 0x8000000000000000ULL;

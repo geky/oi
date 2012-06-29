@@ -24,7 +24,7 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
 }
 
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
-    return !SleepconditionVariableCS(c,m,ms);
+    return !SleepConditionVariableCS(c,m,ms);
 }
 
 oi_call cond_signal_one(cond_t * c) {

@@ -80,9 +80,9 @@ void testpack() {
     float32 if32 = 12.625, of32 = 0;
     float32 onan32 = 0, ozero32 = 0, oinf32 = 0;
     float64 if64 = 12.625, of64 = 0;    
-    float32 onan64 = 0, ozero64 = 0, oinf64 = 0;
+    float64 onan64 = 0, ozero64 = 0, oinf64 = 0;
     float80 if80 = 12.625, of80 = 0;    
-    float32 onan80 = 0, ozero80 = 0, oinf80 = 0;
+    float80 onan80 = 0, ozero80 = 0, oinf80 = 0;
     uint8  nan[10] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
     uint8 zero[10] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
     uint8 inf32[4] = {0x7f,0x80,0x00,0x00};
@@ -112,7 +112,7 @@ void testpack() {
     ozero##n = unpackf##n(zero);                    \
     onan##n = unpackf##n(nan);                      \
     oinf##n = unpackf##n(inf##n);                   \
-    PRINT("",TEST(ozero##n == 0 && onan##n != onan##n && oinf##n == 1.0/0.0), "0->%g nan->%g inf->%g", (double)ozero##n, (double)onan##n, (double)oinf##n);
+    PRINT("",TEST(ozero##n == 0 && onan##n != onan##n && oinf##n == INFINITY), "0->%g nan->%g inf->%g", (double)ozero##n, (double)onan##n, (double)oinf##n);
        
     PACKTEST(32);
     PACKTEST(64);    
@@ -128,9 +128,12 @@ void testtime() {
     
     b=millis();
     PRINT("millis", "\n", "before -> %llu", b);
-    PRINT("sleep", TEST(!err), "sleep(1500) err %d", err=sleep(1500));
-    PRINT("", TEST(!err), "sleep(1000) err %d", err=sleep(1000));
-    PRINT("", TEST(!err), "sleep(500)  err %d", err=sleep(500) );
+	err=sleep(1500);
+    PRINT("sleep", TEST(!err), "sleep(1500) err %d", err);
+	err=sleep(1000);
+    PRINT("", TEST(!err), "sleep(1000) err %d", err);
+	err=sleep(500);
+    PRINT("", TEST(!err), "sleep(500)  err %d", err);
     a = millis();
     PRINT("", TEST((a-b)/100 == 30), "after  -> %llu  diff = %llu", a, a-b);    
 }

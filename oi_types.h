@@ -2,6 +2,18 @@
 #define OI_TYPES 1
 #include "oi_os.h"
 
+#include <math.h>
+
+
+#ifndef OI_VISUAL_STUDIO
+#define oi_func static inline
+#else
+#define oi_func static __inline
+#endif
+
+#define oi_call oi_func int
+
+
 #ifndef OI_VISUAL_STUDIO
 #include "stdint.h"
 typedef int8_t   int8;
@@ -29,12 +41,20 @@ typedef double float64;
 //the biggest instance is windows in which float80 is as precise as float32
 typedef long double float80;
 
-#ifndef OI_VISUAL_STUDIO
-#define oi_func static inline
-#else
-#define oi_func static __inline
+
+#ifdef OI_VISUAL_STUDIO
+#pragma warning(disable : 4056)
+#pragma warning(disable : 4756)
+#define INFINITY (DBL_MAX+DBL_MAX)
+#define NAN (INFINITY-INFINITY)
 #endif
 
-#define oi_call oi_func int
+#ifndef INFINITY
+#define INFINITY (1.0/0.0)
+#endif
+#ifndef NAN
+#define NAN (0.0/0.0)
+#endif
+
 
 #endif
