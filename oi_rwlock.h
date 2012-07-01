@@ -1,5 +1,5 @@
 //requires -pthread on posix machines
-//In current implementation rwlocks are only recursive for read locks
+//Please note rwlocks are not recursive
 #ifndef OI_RWLOCK
 #define OI_RWLOCK 1
 #include "oi_os.h"

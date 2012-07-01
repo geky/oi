@@ -37,10 +37,6 @@ typedef unsigned __int64 uint64;
 
 typedef float float32;
 typedef double float64;
-//please note float80 support on most systems tends to be subpar.
-//the biggest instance is windows in which float80 is as precise as float32
-typedef long double float80;
-
 
 #ifdef OI_VISUAL_STUDIO
 #pragma warning(disable : 4056)

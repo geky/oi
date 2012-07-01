@@ -151,52 +151,5 @@ oi_func float64 unpackf64(void * b) {
 
 #endif
 
-//just manually putting into IEEE float form due to overabundance of issues with padding, endianess, and floating point implementations.... 
-//only on a 16 bit machine would you be able to directly pack the raw value. 
-//I would optimize this later but if you're using extended precision floats you probably aren't focused on speed.
-oi_func void packf80(void * b, float80 in) {
-    int shift = 0;  
-    uint16 exp = 0;
-    uint64 mant = 0;
-
-    if (in != in) {exp = 0xffff; mant = 0xffffffffffffffffULL;}
-    else if (in == INFINITY) {exp = 0x7fff; mant = 0x8000000000000000ULL;}
-    else if (in ==-INFINITY) {exp = 0xffff; mant = 0x8000000000000000ULL;}
-    else if (in != 0.0L) {
-        if (in < 0) {exp = 0x8000; in = -in;} 
-
-        while (in >= 2.0L) {in /= 2.0L; shift++;}
-        while (in <  1.0L) {in *= 2.0L; shift--;}
-
-        mant = (uint64)(in*(0x8000000000000000ULL+0.5L));
-        exp |= shift + 16383;
-    }
-
-    pack16(b,exp);
-    pack64(((uint16*)b)+1,mant);
-}
-
-oi_func float80 unpackf80(void * b) {
-    int shift = 0;
-    uint16 exp = unpack16(b);
-    uint64 mant = unpack64(((uint16*)b)+1);
-    float80 out;
-
-    if(exp == 0x0000 && mant == 0x0000000000000000ULL) return  0.0L;
-    if(exp == 0x7fff && mant == 0x8000000000000000ULL) return  INFINITY;
-    if(exp == 0xffff && mant == 0x8000000000000000ULL) return -INFINITY;
-    if((exp & 0x7fff)==0x7fff) return NAN;
-    
-
-    out = ((float80)mant) / 0x8000000000000000ULL;
-    if (exp & 0x8000) out = -out;
-    shift = (exp & 0x7fff) - 16383;
-    
-    while (shift > 0) {out *= 2.0L; shift--;}
-    while (shift < 0) {out /= 2.0L; shift++;}
-
-    return out;
-}
-
 #endif
 

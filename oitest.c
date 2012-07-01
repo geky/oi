@@ -67,7 +67,6 @@ void testtypes(void) {
         
     PRINT("float32", TEST(sizeof(float32) == 4), "size = %-2d 1/3->%.20f", sizeof(float32), (float32)(1.0/3.0));
     PRINT("float64", TEST(sizeof(float64) == 8), "size = %-2d 1/3->%.20f", sizeof(float64), (float64)(1.0/3.0));
-    PRINT("float80", TEST(sizeof(float80) >  8), "size = %-2d 1/3->%.20Lf", sizeof(float80), (float80)(1.0L/3.0L));
 }
 
 #include "oi_pack.h"
@@ -81,13 +80,10 @@ void testpack() {
     float32 onan32 = 0, ozero32 = 0, oinf32 = 0;
     float64 if64 = 12.625, of64 = 0;    
     float64 onan64 = 0, ozero64 = 0, oinf64 = 0;
-    float80 if80 = 12.625, of80 = 0;    
-    float80 onan80 = 0, ozero80 = 0, oinf80 = 0;
-    uint8  nan[10] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
-    uint8 zero[10] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+    uint8  nan[10] = {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
+    uint8 zero[10] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
     uint8 inf32[4] = {0x7f,0x80,0x00,0x00};
     uint8 inf64[8] = {0x7f,0xf0,0x00,0x00,0x00,0x00,0x00,0x00};
-    uint8 inf80[10]= {0x7f,0xff,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
 #define PACKTEST(n)                         \
     memset(data,0,16);                      \
@@ -115,8 +111,7 @@ void testpack() {
     PRINT("",TEST(ozero##n == 0 && onan##n != onan##n && oinf##n == INFINITY), "0->%g nan->%g inf->%g", (double)ozero##n, (double)onan##n, (double)oinf##n);
        
     PACKTEST(32);
-    PACKTEST(64);    
-    PACKTEST(80);
+    PACKTEST(64);
 
 #undef PACKTEST
 }
@@ -276,10 +271,6 @@ void testrwlockthread(void * d) {
     PRINT("read_lock", TEST(!err), "read thread locking err %d", err);
     sleep(100); printf("\n");
     
-    err = rwlock_read_lock(prw);
-    PRINT("read_lock", TEST(!err), "read thread 2nd locking err %d", err);
-    err = rwlock_read_unlock(prw);
-    PRINT("read_unlk", TEST(!err), "read thread 2nd unlocking err %d", err);
     err = rwlock_read_unlock(prw);
     PRINT("read_unlk", TEST(!err), "read thread unlocking err %d", err);
 }
@@ -400,20 +391,18 @@ void testcond() {
     thread_terminate(&t1);
     thread_destroy(&t1);
     err = cond_signal_all(&c);
-    PRINT("destroy", TEST(!err), "terminating and signalling err %d", err);
+    PRINT("destroy", "\n", "terminating and signalling err %d", err);
 
     err = cond_destroy(&c);
     PRINT("", TEST(!err), "destroying cond err %d", err);
 }
 
+#define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf("\noi_"#file" :\n"); test##file();}
+
 int main(int argc, char ** argv) {
-    
     int all = argc>1; 
     
-    for (;argc > 0; argc--) {   
-
-#define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf("\noi_"#file" :\n"); test##file();}
-    
+    for (;argc > 0; argc--) {       
         TESTF(os);
         TESTF(types);
         TESTF(pack);
