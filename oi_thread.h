@@ -35,7 +35,7 @@ oi_call thread_join(thread_t * t)  {
     return WaitForSingleObject(t->i,INFINITE) != WAIT_OBJECT_0;
 }
 
-oi_call thread_yield() {
+oi_call thread_yield(void) {
     Sleep(0);
     return 0;
 }
@@ -68,7 +68,7 @@ oi_call thread_create(thread_t * t, void (*r)(void*), void * a) {
     return pthread_create(&t->i,0,&_ud_thread_handler,t);
 }
 
-oi_call thread_destroy() {
+oi_call thread_destroy(thread_t * t) {
     return 0;
 }
 
@@ -76,7 +76,7 @@ oi_call thread_join(thread_t * t) {
     return pthread_join(t->i,0);
 }
 
-oi_call thread_yield() {
+oi_call thread_yield(void) {
     return sched_yield();
 }
 
