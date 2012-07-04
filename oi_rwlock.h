@@ -87,6 +87,7 @@ oi_call rwlock_try_read_lock(rwlock_t * rw) {
     if (!rw->count++) ResetEvent(rw->count_event);
     LeaveCriticalSection(&rw->count_lock);
     LeaveCriticalSection(&rw->write_lock);  
+    return 0;
 }
 
 oi_call rwlock_read_unlock(rwlock_t * rw) {
