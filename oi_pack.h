@@ -51,22 +51,23 @@ oi_func uint64 unpack64(void * b) {
 
 #if defined(__STDC_IEC_559__) || ((__FLT_MANT_DIG__ == 24) && (__DBL_MANT_DIG__ == 53))
 
+//union hack to avoid type punning warning
+#define _OI_U(c,v) ((union {uint##c i; float##c f;})v)
+
 oi_func void packf32(void * b, float32 in) {
-    pack32(b,*(uint32*)&in); 
+    pack32(b,_OI_U(32,in).i); 
 }
 
 oi_func float32 unpackf32(void * b) {
-    uint32 temp = unpack32(b);
-    return *(float32*)&temp;
+    return _OI_U(32,unpack32(b)).f;
 }
 
 oi_func void packf64(void * b, float64 in) {
-    pack64(b,*(uint64*)&in);
+    pack64(b,_OI_U(64,in).i);
 }
 
 oi_func float64 unpackf64(void * b) {
-    uint64 temp = unpack64(b);
-    return *(float64*)&temp;
+    return _OI_U(64,unpack64(b)).f;
 }
 
 #else
