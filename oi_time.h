@@ -53,6 +53,7 @@ oi_call sleep(unsigned int ms) {
     
     pthread_cond_destroy(&cond);
     pthread_mutex_destroy(&mutex);
+	return 0;
 }
 
 #endif

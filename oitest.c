@@ -312,36 +312,23 @@ void testrwlock() {
 }
 
 #include "oi_cond.h"
+cond_t * condpc;
 mutex_t * condpm;
 int condmax;
 int condcount;
-void testcondthread(void * p) {
-    cond_t * pc = (cond_t*)p;
+void testcondthread(void * timed) {
     int err;
 
     mutex_lock(condpm);
     while (1) {
-        err = cond_wait(pc,condpm);
-        PRINT("wait", TEST(!err), "woken thread err %d", err);
-        condcount++;
-        PRINT("", TEST(condcount <= condmax), "total signals = %d", condcount);
-    }
-}
-
-void testcondtimethread(void * p) {
-    cond_t * pc = (cond_t*)p;
-    int err;
-
-    mutex_lock(condpm);
-    while (1) {
-        err = cond_timed_wait(pc,condpm,100);
+		err = timed ? cond_timed_wait(condpc,condpm,100) : cond_wait(condpc,condpm);
         if (condcount < 0) break;
-        PRINT("time_wait", TEST(!err), "woken thread err %d", err);
+        PRINT(timed ? "timed_wait" : "wait", TEST(!err), "woken thread err %d", err);
         condcount++;
         PRINT("", TEST(condcount <= condmax), "total signals = %d", condcount);
     }
     
-    PRINT("", TEST(err), "woken thread err %d", err);
+    PRINT("", TEST(!err ^ (int)timed), "woken thread err %d", err);
     mutex_unlock(condpm);
 }
 
@@ -355,11 +342,12 @@ void testcond() {
     mutex_create(&m);
     condpm = &m;
     err = cond_create(&c);
+	condpc = &c;
     PRINT("create", TEST(!err), "creating cond err %d", err);
 
-    thread_create(&t1,&testcondthread,&c);
-    thread_create(&t2,&testcondtimethread,&c);
-    thread_create(&t3,&testcondtimethread,&c);
+    thread_create(&t1,&testcondthread,(void*)0);
+    thread_create(&t2,&testcondthread,(void*)1);
+    thread_create(&t3,&testcondthread,(void*)1);
 
     mutex_lock(&m);
     condmax = 1;
@@ -388,13 +376,14 @@ void testcond() {
     thread_destroy(&t2);
     thread_join(&t3);
     thread_destroy(&t3);
-    thread_terminate(&t1);
-    thread_destroy(&t1);
+
     err = cond_signal_all(&c);
-    PRINT("destroy", "\n", "terminating and signalling err %d", err);
+    PRINT("", TEST(!err), "terminating and signalling err %d", err);
+	thread_join(&t1);
+	thread_destroy(&t1);
 
     err = cond_destroy(&c);
-    PRINT("", TEST(!err), "destroying cond err %d", err);
+    PRINT("destroy", TEST(!err), "destroying cond err %d", err);
 }
 
 #define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf("\noi_"#file" :\n"); test##file();}

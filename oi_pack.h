@@ -7,6 +7,8 @@
 
 #ifdef OI_WIN
 #include "winsock2.h"
+#else
+#include "netinet/in.h"
 #endif
 
 
