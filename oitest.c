@@ -407,9 +407,11 @@ int main(int argc, char ** argv) {
 
     if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");
     else printf("\noi is functional on this system.\nsuccess!\n\n");
-    
+
+#ifdef WAIT_AT_END    
     printf("Press enter to continue");
     scanf("*");
+#endif
     
     return rrr;
 }
