@@ -70,6 +70,8 @@ oi_func float64 unpackf64(void * b) {
     return _OI_U(64,unpack64(b)).f;
 }
 
+#undef _OI_U
+
 #else
 
 oi_func void packf32(void * b, float32 in) {
