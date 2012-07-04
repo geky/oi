@@ -5,7 +5,7 @@
 #include <math.h>
 
 
-#ifndef OI_VISUAL_STUDIO
+#ifndef OI_MSVC
 #define oi_func static inline
 #else
 #define oi_func static __inline
@@ -14,7 +14,7 @@
 #define oi_call oi_func int
 
 
-#ifndef OI_VS
+#ifndef OI_MSVC
 #include "stdint.h"
 typedef int8_t   int8;
 typedef uint8_t  uint8;
@@ -38,7 +38,7 @@ typedef unsigned __int64 uint64;
 typedef float float32;
 typedef double float64;
 
-#ifdef OI_VISUAL_STUDIO
+#ifdef OI_MSVC
 #pragma warning(disable : 4056)
 #pragma warning(disable : 4756)
 #define INFINITY (DBL_MAX+DBL_MAX)
