@@ -15,6 +15,9 @@
 #   ifndef _XOPEN_SOURCE
 #   define _XOPEN_SOURCE 500
 #   endif
+#   ifndef __USE_UNIX98
+#   define __USE_UNIX98
+#   endif
 #elif defined(__APPLE__) || defined(MACOSX) || defined(macintosh) || defined(Macintosh)
 #   define OI_MAC
 #elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
