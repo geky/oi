@@ -47,15 +47,20 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
         a->ipv6.sin6_port = htons(port);
         return 0;
     } else if (lookup) {
-        struct addrinfo * result;
+        struct addrinfo *result, *ptr;
         if (getaddrinfo(s,0,0,&result)) return 1;
-        a->raw = *(result->ai_addr);
+        for (ptr=result; ptr; ptr=ptr->ai_next) {
+            if (ptr->ai_family == AF_INET || ptr->ai_family == AF_INET6) {
+                a->raw = *ptr->ai_addr;
+                a->ipv4.sin_port = htons(port);
+                freeaddrinfo(result);
+                return 0;
+            }
+        }   
         freeaddrinfo(result);
-        a->ipv4.sin_port = htons(port);
-        return 0;
-    } else {
-        return 1;
+        return 2;
     }
+    return 1;
 }
 
 oi_call address_any(address_t * a, uint16 port) {
