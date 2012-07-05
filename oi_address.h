@@ -32,6 +32,8 @@ oi_call address_from_ipv4(address_t * a, void * ip, uint16 port) {
 oi_call address_from_ipv6(address_t * a, void * ip, uint16 port) {
     a->ipv6.sin6_family = AF_INET6;
     a->ipv6.sin6_port = htons(port);
+    a->ipv6.sin6_flowinfo = 0;
+    a->ipv6.sin6_scope_id = 0;
     if (ip) a->ipv6.sin6_addr = *(struct in6_addr*)ip;
     else memset(&a->ipv6.sin6_addr,0,16);
     return 0;
@@ -45,6 +47,8 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     } else if (inet_pton(AF_INET6,s,&a->ipv6.sin6_addr)) {
         a->ipv6.sin6_family = AF_INET6;
         a->ipv6.sin6_port = htons(port);
+        a->ipv6.sin6_flowinfo = 0;
+        a->ipv6.sin6_scope_id = 0;
         return 0;
     } else if (lookup) {
         struct addrinfo *result, *ptr;
