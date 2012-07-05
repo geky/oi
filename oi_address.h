@@ -74,7 +74,7 @@ oi_call address_any(address_t * a, uint16 port) {
     return 0;
 }
 
-oi_call address_localhost(address_t * a, uint16 port) {
+oi_call address_loopback(address_t * a, uint16 port) {
     const char ipv4_loopback[] = {127,0,0,1};
 //    const char ipv6_loopback[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
     a->ipv4.sin_family = AF_INET;
