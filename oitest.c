@@ -6,16 +6,15 @@
 
 char memmm[2][40];
 volatile char rrr = 0;
-//#define PRINT(tt, test, ss,xx...) {char arrrr[42]; sprintf(arrrr,ss, ##xx); printf("\t%-10s: %-40s %s",#tt,arrrr,test);}
 #define TEST(yy) ((yy) ? ": success\n" : (rrr=1, ": FAILURE!\n"))
 
 void PRINT(const char * tt, const char * test, const char * ss, ...) {
     va_list args;
-    char arrrr[42]; 
+    char arrrr[80]; 
     va_start(args,ss);
     vsprintf(arrrr,ss,args); 
     va_end(args);
-    printf("\t%-10s: %-40s %s",tt,arrrr,test);
+    printf("\t%-10s: %-41s%s",tt,arrrr,test);
 }
 
 const char * MEM(int b, void * p, int len) {
@@ -39,9 +38,17 @@ void testos() {
 #elif defined(OI_FreeBSD)
     PRINT("system",TEST(1),"Free BSD");
 #elif defined(OI_UNKOWN_OS)
-    PRINT("os",TEST(0),"Unknown");
+    PRINT("system",TEST(0),"Unknown");
 #else
-    PRINT("os",TEST(0),"None");
+    PRINT("system",TEST(0),"None");
+#endif
+
+#if defined(OI_MSVC)
+    PRINT("compiler",TEST(1),"Visual Studio");
+#elif defined(OI_GCC)
+    PRINT("compiler",TEST(1),"gcc");
+#else
+    PRINT("compiler",TEST(1),"Unknown");
 #endif
 }
 
@@ -386,7 +393,81 @@ void testcond() {
     PRINT("destroy", TEST(!err), "destroying cond err %d", err);
 }
 
-//#include "oi_address.h"
+#include "oi_address.h"
+void testaddress() {
+    address_t a;
+    int err;
+    uint8 * to;
+    size_t len;
+    uint16 oport;
+    char buff[2][41];
+    int time;
+
+    uint8 ta4[] = {8,8,8,8};
+    uint8 ta6[] = {0x20,0x01,0x48,0x60,0x48,0x60,0,0,0,0,0,0,0,0,0x88,0x88};
+    uint16 port = 12345; 
+
+#define ADDTESTWITH(test)   \
+    to = address_get_address(&a,&len); \
+    PRINT("get_addr", test, " addr->%s", MEM(0,to,len));\
+    oport = address_get_port(&a);   \
+    PRINT("get_port", TEST(oport == port), " port->%d",oport);\
+    time = millis();                \
+    err = address_get_name(&a,buff[0],sizeof buff[0],1);\
+    err|= address_get_name(&a,buff[1],sizeof buff[1],0);\
+    PRINT("get_name", "\n", " with->%s", buff[0]);      \
+    PRINT("", "\n", " wout->%s", buff[1]);              \
+    PRINT("", TEST(!err), "get name err %d time %d", err, millis()-time);
+
+#define ADDTESTWOUT(test)   \
+    to = address_get_address(&a,&len); \
+    PRINT("get_addr", test, " addr->%s", MEM(0,to,len));\
+    oport = address_get_port(&a);   \
+    PRINT("get_port", TEST(oport == port), " port->%d",oport);\
+    err = address_get_name(&a,buff[1],sizeof buff[1],0);\
+    PRINT("get_name", "\n", " wout->%s", buff[1]);
+
+
+    err = address_from_ipv4(&a,&ta4,port);
+    PRINT("from_ipv4", "\n", "%s:%d", MEM(0,ta4,4), port);
+    PRINT("", TEST(!err), "address from ipv4 err %d", err);
+    ADDTESTWITH(TEST(to[0]==ta4[0]));
+    printf("\n");
+
+    err = address_from_ipv6(&a,&ta6,port);
+    PRINT("from_ipv6", "\n", "%s:%d", MEM(0,ta6,16), port);
+    PRINT("", TEST(!err), "address from ipv6 err %d", err);
+    ADDTESTWITH(TEST(to[0]==ta6[0]));
+    printf("\n");
+
+    err = address_from_name(&a,"192.0.2.0",port,0);
+    PRINT("from_name", "\n", "\"192.0.2.0\"");
+    PRINT("", TEST(!err), "address from name err %d", err);
+    ADDTESTWOUT(TEST(to[0]==0xc0));
+    printf("\n");
+
+    err = address_from_name(&a,"2001:db8::",port,0);
+    PRINT("from_name", "\n", "\"2001:db8::\"");
+    PRINT("", TEST(!err), "address from name err %d", err);
+    ADDTESTWOUT(TEST(to[0]==0x20));
+    printf("\n");
+
+    err = address_from_name(&a,"www.google.com",port,1);
+    PRINT("from_name", "\n", "\"www.google.com\"");
+    PRINT("", TEST(!err), "address from name err %d", err);
+    ADDTESTWITH("\n");
+    printf("\n");
+
+    err = address_any(&a,port);
+    PRINT("any", TEST(!err), "address any err %d", err);
+    ADDTESTWOUT(TEST(to[0]==0));
+    printf("\n");
+
+    err = address_localhost(&a,port);
+    PRINT("localhost", TEST(!err), "address localhost err %d", err);
+    ADDTESTWITH(TEST(to[0]==127 || to[0]==0));
+
+}
 
 #define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf("\noi_"#file" :\n"); test##file();}
 
@@ -403,14 +484,15 @@ int main(int argc, char ** argv) {
         TESTF(mutex);
         TESTF(rwlock);
         TESTF(cond);
+        TESTF(address);
     }
 
     if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");
     else printf("\noi is functional on this system.\nsuccess!\n\n");
 
-#ifdef WAIT_AT_END    
-    printf("Press enter to continue");
-    scanf("*");
+#ifdef WAIT    
+    printf("Press enter to continue\n");
+    getchar();
 #endif
     
     return rrr;
