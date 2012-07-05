@@ -386,6 +386,8 @@ void testcond() {
     PRINT("destroy", TEST(!err), "destroying cond err %d", err);
 }
 
+//#include "oi_address.h"
+
 #define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf("\noi_"#file" :\n"); test##file();}
 
 int main(int argc, char ** argv) {
@@ -405,6 +407,10 @@ int main(int argc, char ** argv) {
 
     if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");
     else printf("\noi is functional on this system.\nsuccess!\n\n");
+    
+    printf("Press enter to continue");
+    scanf("*");
+    
     return rrr;
 }
 

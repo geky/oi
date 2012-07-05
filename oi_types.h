@@ -14,7 +14,7 @@
 #define oi_call oi_func int
 
 
-#ifndef OI_VISUAL_STUDIO
+#ifndef OI_VS
 #include "stdint.h"
 typedef int8_t   int8;
 typedef uint8_t  uint8;
