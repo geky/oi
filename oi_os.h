@@ -1,6 +1,12 @@
 #ifndef OI_OS
 #define OI_OS 1
 
+#if defined(__cplusplus) 
+#   define OI_CPP
+#else
+#   define OI_C
+#endif
+
 #if defined(__GNUC__)
 #   define OI_GCC
 #elif defined(_MSC_VER)
@@ -15,6 +21,10 @@
 #
 #   ifndef WIN32_LEAN_AND_MEAN
 #   define WIN32_LEAN_AND_MEAN
+#   endif
+#
+#   ifndef _WIN32_WINNT
+#   define _WIN32_WINNT 0x0501
 #   endif
 #
 #   include <windows.h>

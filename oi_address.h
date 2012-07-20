@@ -2,12 +2,11 @@
 #ifndef OI_ADDRESS
 #define OI_ADDRESS 1
 #include "oi_os.h"
+#include "oi_net.h"
 #include "oi_types.h"
-
-#ifdef OI_WIN
-#include <winsock2.h> 
-#else
 #include <string.h>
+
+#ifndef OI_WIN
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -40,30 +39,25 @@ oi_call address_from_ipv6(address_t * a, void * ip, uint16 port) {
 }
 
 oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup) {
-    if (inet_pton(AF_INET, s,&a->ipv4.sin_addr)) {
-        a->ipv4.sin_family = AF_INET;
-        a->ipv4.sin_port = htons(port);
-        return 0;
-    } else if (inet_pton(AF_INET6,s,&a->ipv6.sin6_addr)) {
-        a->ipv6.sin6_family = AF_INET6;
-        a->ipv6.sin6_port = htons(port);
-        a->ipv6.sin6_flowinfo = 0;
-        a->ipv6.sin6_scope_id = 0;
-        return 0;
-    } else if (lookup) {
-        struct addrinfo *result, *ptr;
-        if (getaddrinfo(s,0,0,&result)) return 1;
-        for (ptr=result; ptr; ptr=ptr->ai_next) {
-            if (ptr->ai_family == AF_INET || ptr->ai_family == AF_INET6) {
-                a->raw = *ptr->ai_addr;
-                a->ipv4.sin_port = htons(port);
-                freeaddrinfo(result);
-                return 0;
-            }
-        }   
-        freeaddrinfo(result);
-        return 2;
-    }
+    struct addrinfo hint, *res, *p;
+    _OI_NET_INIT;
+    
+    memset(&hint,0,sizeof hint);
+    hint.ai_family = AF_UNSPEC;
+    if (!lookup) hint.ai_flags = AI_NUMERICHOST;
+    
+    if (getaddrinfo(s,0,&hint,&res)) return 1;
+    for (p = res; p; p = p->ai_next) {
+       if (p->ai_family == AF_INET || p->ai_family == AF_INET6) {
+           a->raw = *p->ai_addr;
+           a->ipv4.sin_port = htons(port);
+           freeaddrinfo(res);
+           _OI_NET_DEINIT;
+           return 0;
+        }
+    }   
+    freeaddrinfo(res);
+    _OI_NET_DEINIT;
     return 1;
 }
 
@@ -84,12 +78,14 @@ oi_call address_loopback(address_t * a, uint16 port) {
 }
 
 oi_call address_get_name(address_t * a, char * s, size_t len, int lookup) {
-    if (lookup) return getnameinfo(&a->raw,sizeof(address_t),s,len,0,0,0);
-    if (a->raw.sa_family == AF_INET)
-        inet_ntop(AF_INET,&a->ipv4.sin_addr,s,len);
-    else
-        inet_ntop(AF_INET6,&a->ipv6.sin6_addr,s,len);
-    return 0;
+    _OI_NET_INIT;
+    if (getnameinfo(&a->raw,sizeof(address_t),s,len,0,0,lookup ? 0 : NI_NUMERICHOST)) {
+        _OI_NET_DEINIT;
+        return 1;
+    } else {
+        _OI_NET_DEINIT;
+        return 0;
+    }
 }
 
 oi_func void * address_get_address(address_t * a, size_t * len) {

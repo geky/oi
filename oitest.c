@@ -36,7 +36,7 @@ void testos() {
 #elif defined(OI_MAC)
     PRINT("system",TEST(1),"Macintosh");
 #elif defined(OI_FreeBSD)
-    PRINT("system",TEST(1),"Free BSD");
+    PRINT("system",TEST(1),"FreeBSD");
 #elif defined(OI_UNKOWN_OS)
     PRINT("system",TEST(0),"Unknown");
 #else
@@ -46,9 +46,17 @@ void testos() {
 #if defined(OI_MSVC)
     PRINT("compiler",TEST(1),"Visual Studio");
 #elif defined(OI_GCC)
-    PRINT("compiler",TEST(1),"gcc");
+    PRINT("compiler",TEST(1),"GCC");
 #else
-    PRINT("compiler",TEST(1),"Unknown");
+    PRINT("compiler",TEST(0),"Unknown");
+#endif
+    
+#if defined(OI_C)
+    PRINT("compiler",TEST(1),"C");
+#elif defined(OI_CPP)
+    PRINT("compiler",TEST(1),"C++");
+#else
+    PRINT("compiler",TEST(0),"None");
 #endif
 }
 
