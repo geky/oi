@@ -3,7 +3,6 @@
 #define OI_TIME 1
 #include "oi_os.h"
 #include "oi_types.h"
-#include <stdio.h>
 
 #ifdef OI_WIN
 

@@ -16,8 +16,8 @@ oi_func void pack(void * b, void * in, size_t inlen) {
     memcpy(b,in,inlen);
 }
 
-oi_func void unpack(void * b, void * out, size_t inlen) {
-    memcpy(out,b,inlen);
+oi_func void unpack(void * b, void * out, size_t outlen) {
+    memcpy(out,b,outlen);
 }
 
 oi_func void pack8(void * b, uint8 in) {
