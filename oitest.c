@@ -87,6 +87,8 @@ void testtypes(void) {
 #include "oi_pack.h"
 void testpack() {
     uint8 data[16];
+    uint8 ii[5] = {0x12,0x34,0x56,0x78,0x9A};
+    uint8 oo[5];
     uint8 i8 = 0x12, o8 = 0;
     uint16 i16 = 0x1234, o16 = 0;
     uint32 i32 = 0x12345678, o32 = 0;   
@@ -99,6 +101,12 @@ void testpack() {
     uint8 zero[10] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
     uint8 inf32[4] = {0x7f,0x80,0x00,0x00};
     uint8 inf64[8] = {0x7f,0xf0,0x00,0x00,0x00,0x00,0x00,0x00};
+    
+    memset(data,0,16);                      
+    pack(data,ii,sizeof ii);                     
+    unpack(data,oo,sizeof oo);                 
+    PRINT("pack", TEST(ii[0] == 0x12), "%s -> %s", MEM(0,ii,sizeof ii), MEM(1,data, sizeof ii));
+    PRINT("unpack", TEST(ii[sizeof(ii)-1] == oo[sizeof(ii)-1]), "%s <-", MEM(0,oo,sizeof ii));
 
 #define PACKTEST(n)                         \
     memset(data,0,16);                      \

@@ -4,6 +4,7 @@
 #include "oi_types.h"
 
 #include <float.h>
+#include <string.h>
 
 #ifdef OI_WIN
 #include "winsock2.h"
@@ -11,6 +12,13 @@
 #include "netinet/in.h"
 #endif
 
+oi_func void pack(void * b, void * in, size_t inlen) {
+    memcpy(b,in,inlen);
+}
+
+oi_func void unpack(void * b, void * out, size_t inlen) {
+    memcpy(out,b,inlen);
+}
 
 oi_func void pack8(void * b, uint8 in) {
     *(uint8*)b = in;
@@ -51,35 +59,30 @@ oi_func uint64 unpack64(void * b) {
 
 #if defined(__STDC_IEC_559__) || ((__FLT_MANT_DIG__ == 24) && (__DBL_MANT_DIG__ == 53))
 
-//union hack to avoid type punning warning
-typedef union {uint32 i; float32 f;} _oi_u32;
-typedef union {uint64 i; float64 f;} _oi_u64;
-
+//union hack to prevent type punning warning
 oi_func void packf32(void * b, float32 in) {
-	_oi_u32 temp;
-	temp.f = in;
+    union {uint32 i; float32 f;} temp;
+    temp.f = in;
     pack32(b,temp.i); 
 }
 
 oi_func float32 unpackf32(void * b) {
-	_oi_u32 temp;
-	temp.i = unpack32(b);
+    union {uint32 i; float32 f;} temp;
+    temp.i = unpack32(b);
     return temp.f;
 }
 
 oi_func void packf64(void * b, float64 in) {
-	_oi_u64 temp;
-	temp.f = in;
+    union {uint64 i; float64 f;} temp;
+    temp.f = in;
     pack64(b,temp.i);
 }
 
 oi_func float64 unpackf64(void * b) {
-	_oi_u64 temp;
-	temp.i = unpack64(b);
+    union {uint64 i; float64 f;} temp;
+    temp.i = unpack64(b);
     return temp.f;
 }
-
-#undef _OI_U
 
 #else
 
