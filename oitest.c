@@ -424,23 +424,23 @@ void testaddress() {
     uint16 port = 12345; 
 
 #define ADDTESTWITH(test)   \
-    to = address_get_address(&a,&len); \
+    to = (uint8*)address_address(&a,&len); \
     PRINT("get_addr", test, " addr->%s", MEM(0,to,len));\
-    oport = address_get_port(&a);   \
+    oport = address_port(&a);   \
     PRINT("get_port", TEST(oport == port), " port->%d",oport);\
     time = millis();                \
-    err = address_get_name(&a,buff[0],sizeof buff[0],1);\
-    err|= address_get_name(&a,buff[1],sizeof buff[1],0);\
+    err = address_name(&a,buff[0],sizeof buff[0],1);\
+    err|= address_name(&a,buff[1],sizeof buff[1],0);\
     PRINT("get_name", "\n", " with->%s", buff[0]);      \
     PRINT("", "\n", " wout->%s", buff[1]);              \
     PRINT("", TEST(!err), "get name err %d time %d", err, millis()-time);
 
 #define ADDTESTWOUT(test)   \
-    to = address_get_address(&a,&len); \
+    to = (uint8*)address_address(&a,&len); \
     PRINT("get_addr", test, " addr->%s", MEM(0,to,len));\
-    oport = address_get_port(&a);   \
+    oport = address_port(&a);   \
     PRINT("get_port", TEST(oport == port), " port->%d",oport);\
-    err = address_get_name(&a,buff[1],sizeof buff[1],0);\
+    err = address_name(&a,buff[1],sizeof buff[1],0);\
     PRINT("get_name", "\n", " wout->%s", buff[1]);
 
 

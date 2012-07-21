@@ -77,7 +77,7 @@ oi_call address_loopback(address_t * a, uint16 port) {
     return 0;
 }
 
-oi_call address_get_name(address_t * a, char * s, size_t len, int lookup) {
+oi_call address_name(address_t * a, char * s, size_t len, int lookup) {
     _OI_NET_INIT;
     if (getnameinfo(&a->raw,sizeof(address_t),s,len,0,0,lookup ? 0 : NI_NUMERICHOST)) {
         _OI_NET_DEINIT;
@@ -88,7 +88,7 @@ oi_call address_get_name(address_t * a, char * s, size_t len, int lookup) {
     }
 }
 
-oi_func void * address_get_address(address_t * a, size_t * len) {
+oi_func void * address_address(address_t * a, size_t * len) {
     if (a->raw.sa_family == AF_INET) {
         if (len) *len = 4;
         return &a->ipv4.sin_addr;
@@ -98,7 +98,7 @@ oi_func void * address_get_address(address_t * a, size_t * len) {
     }
 }
 
-oi_func uint16 address_get_port(address_t * a) {
+oi_func uint16 address_port(address_t * a) {
     return ntohs(a->ipv4.sin_port);
 }
 
