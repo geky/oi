@@ -35,6 +35,11 @@ oi_call thread_join(thread_t * t)  {
     return WaitForSingleObject(t->i,INFINITE) != WAIT_OBJECT_0;
 }
 
+oi_call thread_sleep(unsigned int ms) {
+    Sleep(ms);
+    return 0;   
+}
+
 oi_call thread_yield(void) {
     Sleep(0);
     return 0;
@@ -44,11 +49,11 @@ oi_call thread_terminate(thread_t * t) {
     return !TerminateThread(t->i, 0);
 }
 
-
 #else
 
 #include <pthread.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 typedef struct {
     pthread_t i;
@@ -76,6 +81,34 @@ oi_call thread_join(thread_t * t) {
     return pthread_join(t->i,0);
 }
 
+oi_call thread_sleep(unsigned int ms) {
+    struct timespec time;
+    struct timeval temp;
+    uint64 timems;
+
+    gettimeofday(&temp,0);
+    timems = temp.tv_sec;
+    timems *= 1000;
+    timems += (temp.tv_usec/1000);
+
+    timems += ms;
+    time.tv_nsec = (timems%1000) * 1000000;
+    time.tv_sec = timems / 1000;
+    
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+    pthread_mutex_init(&mutex,0);
+    pthread_cond_init(&cond,0);
+    
+    pthread_mutex_lock(&mutex);
+    pthread_cond_timedwait(&cond,&mutex,&time);
+    pthread_mutex_unlock(&mutex);
+    
+    pthread_cond_destroy(&cond);
+    pthread_mutex_destroy(&mutex);
+	return 0;
+}
+
 oi_call thread_yield(void) {
     return sched_yield();
 }
@@ -83,7 +116,6 @@ oi_call thread_yield(void) {
 oi_call thread_terminate(thread_t * t) {
     return pthread_cancel(t->i);
 }
-
 
 #endif
 

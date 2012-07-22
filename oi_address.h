@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <unistd.h>
 #endif
 
 typedef union {
@@ -48,7 +49,7 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     if (!lookup) hint.ai_flags = AI_NUMERICHOST;
     
     if (getaddrinfo(s,0,&hint,&res)) return 1;
-    a->raw = *res->ai_addr;
+    memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
     freeaddrinfo(res);
@@ -56,16 +57,15 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     return 0;
 }
 
-oi_call address_local(address_t * a, uint16 port) {
+oi_call address_host0(address_t * a, uint16 port) {
     struct addrinfo hint, *res;
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_INET;
-    hint.ai_flags = AI_PASSIVE;
+    hint.ai_family = AF_UNSPEC;
     
-    if (getaddrinfo(0,"12345",&hint,&res)) return 1;
-    a->raw = *res->ai_addr;
+    if (getaddrinfo(0,0,&hint,&res)) return 1;
+    memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
     freeaddrinfo(res);
@@ -73,10 +73,22 @@ oi_call address_local(address_t * a, uint16 port) {
     return 0;
 }
 
-oi_call address_any(address_t * a, uint16 port) {
-    a->ipv6.sin6_family = AF_INET6;
-    a->ipv6.sin6_port = htons(port);
-    a->ipv6.sin6_addr = in6addr_any;
+oi_call address_host1(address_t * a, uint16 port) {
+    struct addrinfo hint, *res;
+    char name[256];
+    _OI_NET_INIT;
+
+    gethostname(name,sizeof name);
+
+    memset(&hint,0,sizeof hint);
+    hint.ai_family=AF_UNSPEC;
+
+    if (getaddrinfo(0,0,&hint,&res)) return 1;
+    memcpy(a,res->ai_addr,res->ai_addrlen);
+    a->ipv4.sin_port = htons(port);
+    
+    freeaddrinfo(res);
+    _OI_NET_DEINIT;
     return 0;
 }
 
@@ -85,10 +97,10 @@ oi_call address_loopback(address_t * a, uint16 port) {
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_INET;
+    hint.ai_family = AF_UNSPEC;
     
     if (getaddrinfo("localhost",0,&hint,&res)) return 1;
-    a->raw = *res->ai_addr;
+    memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
     freeaddrinfo(res);

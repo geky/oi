@@ -139,22 +139,6 @@ void testpack() {
 #undef PACKTEST
 }
 
-#include "oi_time.h"
-void testtime() {
-    int err;
-    uint64 b,a;
-    
-    b=millis();
-    PRINT("millis", "\n", "before -> %llu", b);
-	err=sleep(1500);
-    PRINT("sleep", TEST(!err), "sleep(1500) err %d", err);
-	err=sleep(1000);
-    PRINT("", TEST(!err), "sleep(1000) err %d", err);
-	err=sleep(500);
-    PRINT("", TEST(!err), "sleep(500)  err %d", err);
-    a = millis();
-    PRINT("", TEST((a-b)/100 == 30), "after  -> %llu  diff = %llu", a, a-b);    
-}
 
 #include "oi_thread.h"
 void testthreadthread(void * a) {
@@ -164,12 +148,11 @@ void testthreadthread(void * a) {
     PRINT("yield", "\n", "thread %d yielding", (int)a);
     err = thread_yield();
     PRINT("", TEST(!err), "thread %d yielding err %d", (int)a, err);
-    PRINT("sleep", "\n", "thread %d sleep(100)", (int)a);
-    err = sleep(100);
+    PRINT("sleep", "\n", "thread %d thread_sleep(100)", (int)a);
+    err = thread_sleep(1000);
     PRINT("", TEST(((int)a) == 2), "thread %d not terminated", (int)a);
-    PRINT("", TEST(!err), "thread %d sleep err %d", (int)a, err);
+    PRINT("", TEST(!err), "thread %d thread_sleep err %d", (int)a, err);
 }
-
 
 void testthread() {
     thread_t t1,t2;
@@ -179,7 +162,7 @@ void testthread() {
     err = thread_create(&t2,&testthreadthread, (void*)2);
     PRINT(""      , TEST(!err), "creating thread %d err %d", 2, err);
     
-    sleep(10);
+    thread_sleep(10);
     
     err = thread_terminate(&t1);
     PRINT("terminate", TEST(!err), "terminating thread %d err %d", 1, err);
@@ -194,7 +177,6 @@ void testthread() {
 
 
 #include "oi_local.h"
-
 void testlocalthread(void * p) {
     local_t * lp = (local_t*)p;
     int err;
@@ -261,7 +243,7 @@ void testmutex() {
     PRINT("lock", TEST(!err), "locking mutex err %d", err);    
     
     thread_create(&t,&testmutexthread,&m);
-    sleep(100); printf("\n");
+    thread_sleep(100); printf("\n");
     
     err = mutex_lock(&m);
     PRINT("lock", TEST(!err), "locking mutex err %d", err);
@@ -283,7 +265,6 @@ void testmutex() {
 
 
 #include "oi_rwlock.h"
-
 void testrwlockthread(void * d) {
     rwlock_t * prw = (rwlock_t*)d;
     int err;
@@ -292,7 +273,7 @@ void testrwlockthread(void * d) {
     PRINT("try_read", TEST(err), "read thread trying lock err %d", err);
     err = rwlock_read_lock(prw);
     PRINT("read_lock", TEST(!err), "read thread locking err %d", err);
-    sleep(100); printf("\n");
+    thread_sleep(100); printf("\n");
     
     err = rwlock_read_unlock(prw);
     PRINT("read_unlk", TEST(!err), "read thread unlocking err %d", err);
@@ -301,7 +282,7 @@ void testrwlockthread(void * d) {
 void testrwlock() {
     thread_t t1,t2;
     rwlock_t rw;
-    int err;;
+    int err;
 
     err = rwlock_create(&rw);
     PRINT("create", TEST(!err), "creating rwlock err %d", err);
@@ -311,12 +292,12 @@ void testrwlock() {
     thread_create(&t1,&testrwlockthread,&rw);
     thread_create(&t2,&testrwlockthread,&rw);
 
-    sleep(50); printf("\n");
+    thread_sleep(50); printf("\n");
 
     err = rwlock_write_unlock(&rw);
     PRINT("write_unlk", TEST(!err), "write thread unlocking err %d", err);
 
-    sleep(50); printf("\n");
+    thread_sleep(50); printf("\n");
 
     err = rwlock_try_write_lock(&rw);
     PRINT("try_write", TEST(err), "write thread trying lock err %d", err);
@@ -379,7 +360,7 @@ void testcond() {
     PRINT("signal_one", TEST(!err), "signaling one err %d", err);
     mutex_unlock(&m);
 
-    sleep(50); printf("\n");
+    thread_sleep(50); printf("\n");
 
     mutex_lock(&m);
     condmax = 3;
@@ -388,7 +369,7 @@ void testcond() {
     PRINT("signal_all", TEST(!err), "signaling all err %d", err);
     mutex_unlock(&m);
 
-    sleep(50); printf("\n");
+    thread_sleep(50); printf("\n");
 
     mutex_lock(&m);
     condcount = -1;
@@ -409,6 +390,23 @@ void testcond() {
     PRINT("destroy", TEST(!err), "destroying cond err %d", err);
 }
 
+#include "oi_time.h"
+void testtime() {
+    int err;
+    uint64 b,a;
+    
+    b=millis();
+    PRINT("millis", "\n", "before -> %llu", b);
+	err=thread_sleep(1500);
+    PRINT("sleep", TEST(!err), "thread_sleep(1500) err %d", err);
+	err=thread_sleep(1000);
+    PRINT("", TEST(!err), "thread_sleep(1000) err %d", err);
+	err=thread_sleep(500);
+    PRINT("", TEST(!err), "thread_sleep(500)  err %d", err);
+    a = millis();
+    PRINT("", TEST((a-b)/100 == 30), "after  -> %llu  diff = %llu", a, a-b);    
+}
+
 #include "oi_address.h"
 void testaddress() {
     address_t a;
@@ -425,23 +423,23 @@ void testaddress() {
 
 #define ADDTESTWITH(test)   \
     to = (uint8*)address_address(&a,&len); \
-    PRINT("get_addr", test, " addr->%s", MEM(0,to,len));\
+    PRINT("address", test, " addr->%s", MEM(0,to,len));\
     oport = address_port(&a);   \
-    PRINT("get_port", TEST(oport == port), " port->%d",oport);\
+    PRINT("port", TEST(oport == port), " port->%d",oport);\
     time = millis();                \
     err = address_name(&a,buff[0],sizeof buff[0],1);\
     err|= address_name(&a,buff[1],sizeof buff[1],0);\
-    PRINT("get_name", "\n", " with->%s", buff[0]);      \
+    PRINT("name", "\n", " with->%s", buff[0]);      \
     PRINT("", "\n", " wout->%s", buff[1]);              \
     PRINT("", TEST(!err), "get name err %d time %d", err, millis()-time);
 
 #define ADDTESTWOUT(test)   \
     to = (uint8*)address_address(&a,&len); \
-    PRINT("get_addr", test, " addr->%s", MEM(0,to,len));\
+    PRINT("address", test, " addr->%s", MEM(0,to,len));\
     oport = address_port(&a);   \
-    PRINT("get_port", TEST(oport == port), " port->%d",oport);\
+    PRINT("port", TEST(oport == port), " port->%d",oport);\
     err = address_name(&a,buff[1],sizeof buff[1],0);\
-    PRINT("get_name", "\n", " wout->%s", buff[1]);
+    PRINT("name", "\n", " wout->%s", buff[1]);
 
 
     err = address_from_ipv4(&a,&ta4,port);
@@ -474,17 +472,17 @@ void testaddress() {
     ADDTESTWITH("\n");
     printf("\n");
 
-    err = address_any(&a,port);
-    PRINT("any", TEST(!err), "address any err %d", err);
-    ADDTESTWITH(TEST(to[0]==0));
-    printf("\n");
-
     err = address_loopback(&a,port);
     PRINT("loopback", TEST(!err), "address loopback err %d", err);
     ADDTESTWITH(TEST(to[0]==127 || to[15]==1));
     printf("\n");
     
-    err = address_local(&a,port);
+    err = address_host0(&a,port);
+    PRINT("local", TEST(!err), "address local err %d", err);
+    ADDTESTWITH("\n");
+    printf("\n");
+
+    err = address_host1(&a,port);
     PRINT("local", TEST(!err), "address local err %d", err);
     ADDTESTWITH("\n");
 
@@ -499,12 +497,12 @@ int main(int argc, char ** argv) {
         TESTF(os);
         TESTF(types);
         TESTF(pack);
-        TESTF(time);
         TESTF(thread);
         TESTF(local);
         TESTF(mutex);
         TESTF(rwlock);
         TESTF(cond);
+        TESTF(time);
         TESTF(address);
     }
 
