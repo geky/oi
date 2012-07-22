@@ -5,7 +5,11 @@
 
 #ifdef OI_WIN
 #   include <winsock2.h>
-#   include <WS2tcpip.h>
+#   include <ws2tcpip.h>
+#
+#   if _WIN32_WINNT >= 0x0600 && !defined(IPV6_V6ONLY)
+#       define IPV6_V6ONLY 27
+#   endif
 #
 #   //yes, the return in the macro is intentional
 #   define _OI_NET_INIT {                       \
@@ -16,14 +20,17 @@
 #   define _OI_NET_DEINIT                       \
         if (WSACleanup()) return 5;
 
+#   define _OI_NET_ERR WSAGetLastError()
+#
 #else
 #   define _OI_NET_INIT
 #   define _OI_NET_DEINIT
+#   define _OI_NET_ERR errno
 #
 #endif
 
 #ifdef IPV6_V6ONLY
-#   define OI_DUALSTACK
+#   define _OI_NET_DS
 #endif
 
 #endif

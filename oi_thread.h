@@ -14,7 +14,7 @@ typedef struct {
     void * data;
 } thread_t;
 
-static unsigned int __stdcall _ud_thread_handler(void * args) {
+static unsigned int __stdcall _oi_thread_handler(void * args) {
     (*((thread_t*)args)->func)(((thread_t*)args)->data);
     _endthreadex(0);
     return 0;
@@ -23,7 +23,7 @@ static unsigned int __stdcall _ud_thread_handler(void * args) {
 oi_call thread_create(thread_t * t, void (*r)(void*), void * a) {
     t->func = r;
     t->data = a;
-    t->i = (HANDLE)_beginthreadex(0,0,&_ud_thread_handler,t,0,0);
+    t->i = (HANDLE)_beginthreadex(0,0,&_oi_thread_handler,t,0,0);
     return !t->i;
 }
 
@@ -56,7 +56,7 @@ typedef struct {
     void * data;
 } thread_t;
 
-void * _ud_thread_handler(void * args) {
+void * _oi_thread_handler(void * args) {
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
     (*((thread_t*)args)->func)(((thread_t*)args)->data);
     return 0;
@@ -65,7 +65,7 @@ void * _ud_thread_handler(void * args) {
 oi_call thread_create(thread_t * t, void (*r)(void*), void * a) {
     t->func = r;
     t->data = a;
-    return pthread_create(&t->i,0,&_ud_thread_handler,t);
+    return pthread_create(&t->i,0,&_oi_thread_handler,t);
 }
 
 oi_call thread_destroy(thread_t * t) {
