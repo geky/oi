@@ -40,7 +40,7 @@ oi_call address_from_ipv6(address_t * a, void * ip, uint16 port) {
 }
 
 oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup) {
-    struct addrinfo hint, *res, *p;
+    struct addrinfo hint, *res;
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
@@ -48,42 +48,29 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     if (!lookup) hint.ai_flags = AI_NUMERICHOST;
     
     if (getaddrinfo(s,0,&hint,&res)) return 1;
-    for (p = res; p; p = p->ai_next) {
-        if (p->ai_family == AF_INET || p->ai_family == AF_INET6) {
-            a->raw = *p->ai_addr;
-            a->ipv4.sin_port = htons(port);
-            freeaddrinfo(res);
-            _OI_NET_DEINIT;
-            return 0;
-        }
-    }   
+    a->raw = *res->ai_addr;
+    a->ipv4.sin_port = htons(port);
+    
     freeaddrinfo(res);
     _OI_NET_DEINIT;
-    return 1;
+    return 0;
 }
 
 oi_call address_local(address_t * a, uint16 port) {
-    struct addrinfo hint, *res, *p;
+    struct addrinfo hint, *res;
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_UNSPEC;
+    hint.ai_family = AF_INET;
     hint.ai_flags = AI_PASSIVE;
     
-    if (getaddrinfo(0,"1234",&hint,&res)) return 1;
-    for (p = res; p; p = p->ai_next) {
-        printf("[p%d]",p->ai_family);
-        if (p->ai_family == AF_INET || p->ai_family == AF_INET6) {
-            a->raw = *p->ai_addr;
-            a->ipv4.sin_port = htons(port);
-            freeaddrinfo(res);
-            _OI_NET_DEINIT;
-            return 0;
-        }
-    }   
+    if (getaddrinfo(0,"12345",&hint,&res)) return 1;
+    a->raw = *res->ai_addr;
+    a->ipv4.sin_port = htons(port);
+    
     freeaddrinfo(res);
     _OI_NET_DEINIT;
-    return 1;
+    return 0;
 }
 
 oi_call address_any(address_t * a, uint16 port) {
@@ -94,9 +81,18 @@ oi_call address_any(address_t * a, uint16 port) {
 }
 
 oi_call address_loopback(address_t * a, uint16 port) {
-    a->ipv6.sin6_family = AF_INET6;
-    a->ipv6.sin6_port = htons(port);
-    a->ipv6.sin6_addr = in6addr_loopback;
+    struct addrinfo hint, *res;
+    _OI_NET_INIT;
+    
+    memset(&hint,0,sizeof hint);
+    hint.ai_family = AF_INET;
+    
+    if (getaddrinfo("localhost",0,&hint,&res)) return 1;
+    a->raw = *res->ai_addr;
+    a->ipv4.sin_port = htons(port);
+    
+    freeaddrinfo(res);
+    _OI_NET_DEINIT;
     return 0;
 }
 

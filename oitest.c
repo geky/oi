@@ -476,12 +476,12 @@ void testaddress() {
 
     err = address_any(&a,port);
     PRINT("any", TEST(!err), "address any err %d", err);
-    ADDTESTWOUT(TEST(to[0]==0));
+    ADDTESTWITH(TEST(to[0]==0));
     printf("\n");
 
     err = address_loopback(&a,port);
     PRINT("loopback", TEST(!err), "address loopback err %d", err);
-    ADDTESTWITH(TEST(to[0]==127 || to[0]==0));
+    ADDTESTWITH(TEST(to[0]==127 || to[15]==1));
     printf("\n");
     
     err = address_local(&a,port);

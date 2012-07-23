@@ -3,6 +3,10 @@
 
 #include "oi_os.h"
 
+#ifdef OI_MSVC
+#   pragma comment(lib,"ws2_32.lib")
+#endif
+
 #ifdef OI_WIN
 #   include <winsock2.h>
 #   include <ws2tcpip.h>
