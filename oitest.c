@@ -497,6 +497,7 @@ void testaddress() {
 void testsocket() {
     int err;
     char data[] = {104,101,108,108,111};
+    address_t temp;
     socket_t s0,s1,s2;
 
     err = socket_create(&s0,UDP,1);
@@ -506,11 +507,26 @@ void testsocket() {
     err = socket_create_ipv6(&s2,UDP,1);
     PRINT("", TEST(!err), "creating ipv6 socket %d", err);
     
-    err = socket_bind(&s0,12345);
+    address_from_name(&temp,"127.0.0.1",12347,1);
+
+//    err = socket_bind(&s0,12345);
+    err = socket_bind_address(&s0,&temp);
     PRINT("create", TEST(!err), "binding dual socket (12345) %d", err);
-    err = socket_bind(&s1,12346);
+//    err = socket_bind(&s1,12346);
+    err = socket_bind_address(&s1,&temp);
     PRINT("", TEST(!err), "binding ipv4 socket (12346) %d", err);
-    err = socket_bind(&s2,12346);
+//    err = socket_bind(&s2,12346);
+    err = socket_bind_address(&s2,&temp);
+    PRINT("", TEST(!err), "binding ipv6 socket (12346) %d", err);
+
+//    err = socket_bind(&s0,12345);
+    err = socket_bind_address(&s0,&temp);
+    PRINT("create", TEST(!err), "binding dual socket (12345) %d", err);
+//    err = socket_bind(&s1,12346);
+    err = socket_bind_address(&s1,&temp);
+    PRINT("", TEST(!err), "binding ipv4 socket (12346) %d", err);
+//    err = socket_bind(&s2,12346);
+    err = socket_bind_address(&s2,&temp);
     PRINT("", TEST(!err), "binding ipv6 socket (12346) %d", err);
 
     err = socket_destroy(&s0) |

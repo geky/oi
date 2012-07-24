@@ -5,11 +5,7 @@
 #include "oi_net.h"
 #include "oi_address.h"
 
-#include <errno.h>
-
 #ifdef OI_DUALSTACK
-#include <sys/types.h>
-#include <sys/socket.h>
 #   define _OI_SDSTACK(sock,val) {\
         int opt = val;            \
         if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,&opt,sizeof opt))\
@@ -101,14 +97,31 @@ oi_call socket_bind(socket_t * s, uint16 port) {
         temp.ipv4.sin_port = htons(port);
         if (bind(s->ipv4, &temp.raw, sizeof temp.ipv4)) return 4;
     }
-    
     return 0;
 }
-#if 0
-oi_call socket_bind_address(socket_t * s, address_t * a) {
-     
-}
 
+oi_call socket_bind_address(socket_t * s, address_t * a) {
+    if (a->family == IPV6 && s->ipv6 != _OI_SINVAL) {
+        return bind(s->ipv6, &a->raw, sizeof a->ipv6);
+    } else if (a->family == IPV4 && s->ipv4 != _OI_SINVAL) {
+        if (s->ipv4 != s->ipv6) {
+            return bind(s->ipv4, &a->raw, sizeof a->ipv4);
+        } else {
+            address_t temp;
+            memset(&temp,0,sizeof temp);
+            temp.ipv6.sin6_family = IPV6;
+            temp.ipv6.sin6_port = a->ipv4.sin_port;
+            temp.ipv6.sin6_addr.s6_addr[10] = 0xff;
+            temp.ipv6.sin6_addr.s6_addr[11] = 0xff;
+            memcpy(&temp.ipv6.sin6_addr.s6_addr[12],&a->ipv4.sin_addr,4);
+
+            return bind(s->ipv6, &temp.raw, sizeof temp.ipv6);
+        }
+    }
+
+    return -1;
+}
+#if 0
 oi_call tcp_connect(socket_t * s, address_t * a) {
     return connect(*s,(sockaddr*)a,sizeof(address_t));
 }
