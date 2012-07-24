@@ -12,7 +12,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <unistd.h>
 #endif
 
 typedef union {
@@ -73,17 +72,18 @@ oi_call address_host0(address_t * a, uint16 port) {
     return 0;
 }
 
+#include <unistd.h>
 oi_call address_host1(address_t * a, uint16 port) {
     struct addrinfo hint, *res;
     char name[256];
     _OI_NET_INIT;
 
-    gethostname(name,sizeof name);
+    gethostname(name,sizeof name); printf("%s",name);
 
     memset(&hint,0,sizeof hint);
-    hint.ai_family=AF_UNSPEC;
+    hint.ai_family = AF_UNSPEC;
 
-    if (getaddrinfo(0,0,&hint,&res)) return 1;
+    if (getaddrinfo(name,0,&hint,&res)) return 1;
     memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
@@ -92,14 +92,59 @@ oi_call address_host1(address_t * a, uint16 port) {
     return 0;
 }
 
+#ifdef OI_WIN
+oi_call address_host2(address_t * a, uint16 port) {
+    struct addrinfo hint, *res;
+    SOCKET temp;
+    _OI_NET_INIT;
+    
+    temp = socket(PF_INET, SOCK_DGRAM, 0);
+    connect(temp)
+
+    memset(&hint,0,sizeof hint);
+    hint.ai_family = AF_UNSPEC;
+
+    if (getaddrinfo(name,0,&hint,&res)) return 1;
+    memcpy(a,res->ai_addr,res->ai_addrlen);
+    a->ipv4.sin_port = htons(port);
+    
+    freeaddrinfo(res);
+    _OI_NET_DEINIT;
+    return 0;
+}
+
+#else
+
+oi_call address_host2(address_t * a, uint16 port) {
+    struct addrinfo hint, *res;
+    char name[256];
+    _OI_NET_INIT;
+
+    gethostname(name,sizeof name); printf("%s",name);
+
+    memset(&hint,0,sizeof hint);
+    hint.ai_family = AF_UNSPEC;
+
+    if (getaddrinfo(name,0,&hint,&res)) return 1;
+    memcpy(a,res->ai_addr,res->ai_addrlen);
+    a->ipv4.sin_port = htons(port);
+    
+    freeaddrinfo(res);
+    _OI_NET_DEINIT;
+    return 0;
+}
+
+#endif
+
 oi_call address_loopback(address_t * a, uint16 port) {
     struct addrinfo hint, *res;
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
     hint.ai_family = AF_UNSPEC;
+    hint.ai_flags = AI_NUMERICHOST;
     
-    if (getaddrinfo("localhost",0,&hint,&res)) return 1;
+    if (getaddrinfo("127.0.0.1",0,&hint,&res)) return 1;
     memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
