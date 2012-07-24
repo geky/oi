@@ -56,6 +56,22 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     return 0;
 }
 
+oi_call address_loopback(address_t * a, uint16 port) {
+    struct addrinfo hint, *res;
+    _OI_NET_INIT;
+    
+    memset(&hint,0,sizeof hint);
+    hint.ai_family = AF_UNSPEC;
+    
+    if (getaddrinfo("localhost",0,&hint,&res)) return 1;
+    memcpy(a,res->ai_addr,res->ai_addrlen);
+    a->ipv4.sin_port = htons(port);
+    
+    freeaddrinfo(res);
+    _OI_NET_DEINIT;
+    return 0;
+}
+
 oi_call address_host0(address_t * a, uint16 port) {
     struct addrinfo hint, *res;
     _OI_NET_INIT;
@@ -94,64 +110,39 @@ oi_call address_host1(address_t * a, uint16 port) {
 
 #ifdef OI_WIN
 oi_call address_host2(address_t * a, uint16 port) {
-    struct addrinfo hint, *res;
-    SOCKET temp;
+    SOCKET sock;
     _OI_NET_INIT;
-    
-    temp = socket(PF_INET, SOCK_DGRAM, 0);
-    connect(temp)
+    socklen_t s = sizeof a;
+    address_from_name(a,"www.google.com",port,1);
 
-    memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_UNSPEC;
+    sock = socket(PF_INET6,SOCK_DGRAM, 0);
+    connect(sock,&a->raw,sizeof a);
+    if (getsockname(sock,&a->raw,&s)) printf("er");
+    closesocket(sock);
 
-    if (getaddrinfo(name,0,&hint,&res)) return 1;
-    memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
-    
-    freeaddrinfo(res);
     _OI_NET_DEINIT;
     return 0;
 }
 
 #else
-
+#include <errno.h>
 oi_call address_host2(address_t * a, uint16 port) {
-    struct addrinfo hint, *res;
-    char name[256];
-    _OI_NET_INIT;
+    int sock;
+    socklen_t s = sizeof(struct sockaddr_in6);
+    address_from_name(a,"www.google.com",0,1);
 
-    gethostname(name,sizeof name); printf("%s",name);
+    sock = socket(PF_INET6,SOCK_DGRAM, 0);
+    if (connect(sock,&a->raw,s)) printf("er1[%d]",errno);
+    if (getsockname(sock,&a->raw,&s)) printf("er2");
+    close(sock);
 
-    memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_UNSPEC;
-
-    if (getaddrinfo(name,0,&hint,&res)) return 1;
-    memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
-    
-    freeaddrinfo(res);
-    _OI_NET_DEINIT;
     return 0;
 }
 
 #endif
 
-oi_call address_loopback(address_t * a, uint16 port) {
-    struct addrinfo hint, *res;
-    _OI_NET_INIT;
-    
-    memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_UNSPEC;
-    hint.ai_flags = AI_NUMERICHOST;
-    
-    if (getaddrinfo("127.0.0.1",0,&hint,&res)) return 1;
-    memcpy(a,res->ai_addr,res->ai_addrlen);
-    a->ipv4.sin_port = htons(port);
-    
-    freeaddrinfo(res);
-    _OI_NET_DEINIT;
-    return 0;
-}
 
 oi_call address_name(address_t * a, char * s, size_t len, int lookup) {
     int err;

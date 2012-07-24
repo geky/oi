@@ -485,7 +485,11 @@ void testaddress() {
     err = address_host1(&a,port);
     PRINT("local", TEST(!err), "address local err %d", err);
     ADDTESTWITH("\n");
+    printf("\n");
 
+    err = address_host2(&a,port);
+    PRINT("local", TEST(!err), "address local err %d", err);
+    ADDTESTWITH("\n");
 }
 
 #define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf("\noi_"#file" :\n"); test##file();}
