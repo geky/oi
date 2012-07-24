@@ -1,94 +1,112 @@
-// for windows use -lws2_32
 #ifndef OI_SOCKET
 #define OI_SOCKET 1
 #include "oi_os.h"
 #include "oi_types.h"
+#include "oi_net.h"
 #include "oi_address.h"
 
-#ifdef OI_WIN
-#define WSAGetLastError() errno;
+#include <errno.h>
+
+#ifdef OI_DUALSTACK
+#include <sys/types.h>
+#include <sys/socket.h>
+#   define _OI_SDSTACK(sock,val) {\
+        int opt = val;            \
+        if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,&opt,sizeof opt))\
+            return 4;             \
+    }
 #else
+#   define _OI_SDSTACK(sock,val)
 #endif
 
-#define SOCKET_RAW SOCK_RAW
-#define SOCKET_UDP SOCK_DGRAM
-#define SOCKET_TCP SOCK_STREAM
-
 #ifdef OI_WIN
+#
+#   define _OI_SINVAL INVALID_SOCKET
+#   define _OI_SCLOSE(sock) closesocket(sock)
+#   define _OI_SBLOCK(sock,val) {\
+        u_long blk = val?0:1;    \
+        if (ioctlsocket(sock,FIONBIO,&blk)) return 3;\
+    }
 
-typedef SOCKET socket_t;
+typedef struct {
+    SOCKET ipv4;
+    SOCKET ipv6;
+} socket_t;
 
-oi_call socket_create(socket_t * s, int proto, int block) {
-    WSADATA data;
-    u_long blockval = block?0:1;
-    int opt = 0;
-    if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
-    if ((*s=socket(AF_INET6, proto,0))==-1) return 2;
-    if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
-    if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt))) return 4;
-    return 0;
+#else
+#   include <fcntl.h>
+#
+#   define _OI_SINVAL -1
+#   define _OI_SCLOSE(sock) close(sock)
+#   define _OI_SBLOCK(sock,val) \
+        if (block) fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)&~O_NONBLOCK);
+
+typedef struct {
+    signed int ipv4;
+    signed int ipv6;
+} socket_t;
+
+#endif
+
+
+oi_call socket_create(socket_t * s, int proto, int block) { 
+    s->ipv6 = socket(IPV6, proto, 0);
+    _OI_SBLOCK(s->ipv6,block);
+    
+#ifdef OI_DUALSTACK
+    s->ipv4 = s->ipv6;
+    _OI_SDSTACK(s->ipv6, 0);
+#else
+    s->ipv4 = socket(IPV4, proto, 0);
+    _OI_SBLOCK(s->sock.ipv4,block);
+#endif
+    return s->ipv6 == _OI_SINVAL;
 }
 
 oi_call socket_create_ipv4(socket_t * s, int proto, int block) {
-    WSADATA data;
-    u_long blockval = block?0:1;
-    if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
-    if ((*s=socket(AF_INET, proto,0))==-1) return 2;
-    if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
-    return 0;
+    s->ipv4 = socket(IPV4, proto, 0);
+    s->ipv6 = _OI_SINVAL;
+    _OI_SBLOCK(s->ipv4, block);
+    return s->ipv4 == _OI_SINVAL;
 }
 
 oi_call socket_create_ipv6(socket_t * s, int proto, int block) {
-    WSADATA data;
-    u_long blockval = block?0:1;
-    int opt = 1;
-    if (WSAStartup(MAKEWORD(2,2),&data)) return 1;
-    if ((*s=socket(AF_INET6, proto,0))==-1) return 2;
-    if (ioctlsocket(*s,FIONBIO,&blockval)) return 3;
-    if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt))) return 4;
-    return 0;
+    s->ipv6 = socket(IPV6, proto, 0);
+    s->ipv4 = _OI_SINVAL;
+    _OI_SBLOCK(s->ipv6, block);
+    _OI_SDSTACK(s->ipv6, 1);
+    return s->ipv6 == _OI_SINVAL;
 }
 
 oi_call socket_destroy(socket_t * s) {
-    if(closesocket(*s)) return 1;
+    if (s->ipv6 != _OI_SINVAL) _OI_SCLOSE(s->ipv6);
+    if (s->ipv4 != _OI_SINVAL && s->ipv4 != s->ipv6) _OI_SCLOSE(s->ipv4);
     _OI_NET_DEINIT;
-    return 0; 
+    return 0;
 }
 
-#else
+oi_call socket_bind(socket_t * s, uint16 port) {
+    address_t temp;
 
-typedef int socket_t;
-
-oi_call socket_create(socket_t * s, int proto, int block) {
-    int opt = 0;
-    *s = socket(AF_INET6, proto, 0);
-    if (block) fcntl(*s, F_SETFL, fcntl(*s, F_GETFL)&~O_NONBLOCK);
-    if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt))) return 4;
-    return *s != -1;
+    if (s->ipv6 != _OI_SINVAL) {
+        memset(&temp,0,sizeof temp);
+        temp.ipv6.sin6_family = IPV6;
+        temp.ipv6.sin6_port = htons(port);
+        if (bind(s->ipv6, &temp.raw, sizeof temp.ipv6)) return 6;
+    }
+    
+    if (s->ipv4 != _OI_SINVAL && s->ipv4 != s->ipv6) {
+        memset(&temp,0,sizeof temp);
+        temp.ipv4.sin_family = IPV4;
+        temp.ipv4.sin_port = htons(port);
+        if (bind(s->ipv4, &temp.raw, sizeof temp.ipv4)) return 4;
+    }
+    
+    return 0;
 }
-
-oi_call socket_create_ipv4(socket_t * s, int proto, int block) {
-    *s = socket(AF_INET, proto, 0);
-    if (block) fcntl(*s, F_SETFL, fcntl(*s, F_GETFL)&~O_NONBLOCK);
-    return *s != -1;
-}
-
-oi_call socket_create_ipv6(socket_t * s, int proto, int block) {
-    int opt = 1;
-    *s = socket(AF_INET6, proto, 0);
-    if (block) fcntl(*s, F_SETFL, fcntl(*s, F_GETFL)&~O_NONBLOCK);
-    if (setsockopt(*s,SOL_SOCKET,IPV6_V6ONLY,&opt,sizeof(opt))) return 4;
-    return *s != -1;
-}
-
-oi_call socket_destroy(socket_t * s) {
-    return close(s);
-}
-
-#endif
-
-oi_call socket_bind(socket_t * s, address_t * a) {
-    return bind(*s,(sockaddr*)a,sizeof(address_t));    
+#if 0
+oi_call socket_bind_address(socket_t * s, address_t * a) {
+     
 }
 
 oi_call tcp_connect(socket_t * s, address_t * a) {
@@ -124,7 +142,5 @@ oi_call udp_rec(socket_t * s, void * buf, size_t len, size_t * inlen, address_t 
 }
 
 
-#ifdef OI_WIN
-#undef errno
 #endif
 #endif

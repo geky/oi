@@ -407,6 +407,17 @@ void testtime() {
     PRINT("", TEST((a-b)/100 == 30), "after  -> %llu  diff = %llu", a, a-b);    
 }
 
+#include "oi_net.h"
+void testnet() {
+#if defined(OI_DUALSTACK)
+    PRINT("net",TEST(1),"Dual Stack");
+#elif defined(OI_SINGLESTACK)
+    PRINT("net",TEST(1),"Single Stack");
+#else
+    PRINT("net",TEST(0),"No Network");
+#endif
+}
+
 #include "oi_address.h"
 void testaddress() {
     address_t a;
@@ -482,6 +493,32 @@ void testaddress() {
     ADDTESTWITH("\n");
 }
 
+#include "oi_socket.h"
+void testsocket() {
+    int err;
+    char data[] = {104,101,108,108,111};
+    socket_t s0,s1,s2;
+
+    err = socket_create(&s0,UDP,1);
+    PRINT("create", TEST(!err), "creating dual socket %d", err);
+    err = socket_create_ipv4(&s1,UDP,1);
+    PRINT("", TEST(!err), "creating ipv4 socket %d", err);
+    err = socket_create_ipv6(&s2,UDP,1);
+    PRINT("", TEST(!err), "creating ipv6 socket %d", err);
+    
+    err = socket_bind(&s0,12345);
+    PRINT("create", TEST(!err), "binding dual socket (12345) %d", err);
+    err = socket_bind(&s1,12346);
+    PRINT("", TEST(!err), "binding ipv4 socket (12346) %d", err);
+    err = socket_bind(&s2,12346);
+    PRINT("", TEST(!err), "binding ipv6 socket (12346) %d", err);
+
+    err = socket_destroy(&s0) |
+          socket_destroy(&s1) |
+          socket_destroy(&s2);
+    PRINT("destroy", TEST(!err), "destroying sockets %d", err);
+}
+
 #define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf("\noi_"#file" :\n"); test##file();}
 
 int main(int argc, char ** argv) {
@@ -497,7 +534,9 @@ int main(int argc, char ** argv) {
         TESTF(rwlock);
         TESTF(cond);
         TESTF(time);
+        TESTF(net);
         TESTF(address);
+        TESTF(socket);
     }
 
     if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");

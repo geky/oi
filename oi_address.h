@@ -23,7 +23,7 @@ typedef union {
 } address_t;
 
 oi_call address_from_ipv4(address_t * a, void * ip, uint16 port) {
-    a->ipv4.sin_family = AF_INET;
+    a->ipv4.sin_family = IPV4;
     a->ipv4.sin_port = htons(port);
     if (ip) a->ipv4.sin_addr = *(struct in_addr*)ip;
     else memset(&a->ipv4.sin_addr,0,4);
@@ -31,12 +31,10 @@ oi_call address_from_ipv4(address_t * a, void * ip, uint16 port) {
 }
 
 oi_call address_from_ipv6(address_t * a, void * ip, uint16 port) {
-    a->ipv6.sin6_family = AF_INET6;
+    memset(a,0,sizeof(address_t));
+    a->ipv6.sin6_family = IPV6;
     a->ipv6.sin6_port = htons(port);
-    a->ipv6.sin6_flowinfo = 0;
-    a->ipv6.sin6_scope_id = 0;
     if (ip) a->ipv6.sin6_addr = *(struct in6_addr*)ip;
-    else memset(&a->ipv6.sin6_addr,0,16);
     return 0;
 }
 
@@ -100,7 +98,7 @@ oi_call address_name(address_t * a, char * s, size_t len, int lookup) {
 }
 
 oi_func void * address_address(address_t * a, size_t * len) {
-    if (a->family == AF_INET) {
+    if (a->family == IPV4) {
         if (len) *len = 4;
         return &a->ipv4.sin_addr;
     } else {
@@ -113,4 +111,7 @@ oi_func uint16 address_port(address_t * a) {
     return ntohs(a->ipv4.sin_port);
 }
 
+oi_func int address_protocol(address_t * a) {
+    return a->family;
+}
 #endif

@@ -1,7 +1,17 @@
+//you may define
+// OI_IPV4_ONLY
+// OI_IPV6_ONLY
+// OI_DUALSTACK
+// OI_SINGLESTACK
 #ifndef OI_NET
 #define OI_NET 1
 
 #include "oi_os.h"
+
+#define UDP SOCK_DGRAM
+#define TCP SOCK_STREAM
+#define IPV4 AF_INET
+#define IPV6 AF_INET6
 
 #ifdef OI_MSVC
 #   pragma comment(lib,"ws2_32.lib")
@@ -33,8 +43,12 @@
 #
 #endif
 
+#if !defined(OI_SINGLESTACK) && !defined(OI_DUALSTACK)
 #ifdef IPV6_V6ONLY
-#   define _OI_NET_DS
+#   define OI_DUALSTACK
+#else
+#   define OI_SINGLESTACK
+#endif
 #endif
 
 #endif
