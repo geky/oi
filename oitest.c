@@ -413,6 +413,10 @@ void testnet() {
     PRINT("net",TEST(1),"Dual Stack");
 #elif defined(OI_SINGLESTACK)
     PRINT("net",TEST(1),"Single Stack");
+#elif defined(OI_IPV4)
+    PRINT("net",TEST(1),"IPv4 Only");
+#elif defined(OI_IPV6)
+    PRINT("net",TEST(1),"IPv6 Only");
 #else
     PRINT("net",TEST(0),"No Network");
 #endif
@@ -420,10 +424,10 @@ void testnet() {
 
 #include "oi_address.h"
 void testaddress() {
-    address_t a;
+    address_t a[4];
     int err;
     uint8 * to;
-    size_t len;
+    size_t len,count;
     uint16 oport;
     char buff[2][41];
     int time;
@@ -432,103 +436,90 @@ void testaddress() {
     uint8 ta6[] = {0x20,0x01,0x48,0x60,0x48,0x60,0,0,0,0,0,0,0,0,0x88,0x88};
     uint16 port = 12345; 
 
-#define ADDTESTWITH(test)   \
-    to = (uint8*)address_address(&a,&len); \
+#define ADDTESTWITH(num,test)   \
+    to = (uint8*)address_address(&a[num],&len); \
     PRINT("address", test, " addr->%s", MEM(0,to,len));\
-    oport = address_port(&a);   \
+    oport = address_port(&a[num]);   \
     PRINT("port", TEST(oport == port), " port->%d",oport);\
     time = millis();                \
-    err = address_name(&a,buff[0],sizeof buff[0],1);\
-    err|= address_name(&a,buff[1],sizeof buff[1],0);\
+    err = address_name(&a[num],buff[0],sizeof buff[0],1);\
+    err|= address_name(&a[num],buff[1],sizeof buff[1],0);\
     PRINT("name", "\n", " with->%s", buff[0]);      \
     PRINT("", "\n", " wout->%s", buff[1]);              \
     PRINT("", TEST(!err), "get name err %d time %d", err, millis()-time);
 
 #define ADDTESTWOUT(test)   \
-    to = (uint8*)address_address(&a,&len); \
+    to = (uint8*)address_address(a,&len); \
     PRINT("address", test, " addr->%s", MEM(0,to,len));\
-    oport = address_port(&a);   \
+    oport = address_port(a);   \
     PRINT("port", TEST(oport == port), " port->%d",oport);\
-    err = address_name(&a,buff[1],sizeof buff[1],0);\
+    err = address_name(a,buff[1],sizeof buff[1],0);\
     PRINT("name", "\n", " wout->%s", buff[1]);
 
 
-    err = address_from_ipv4(&a,&ta4,port);
+    err = address_from_ipv4(a,&ta4,port);
     PRINT("from_ipv4", "\n", "%s:%d", MEM(0,ta4,4), port);
     PRINT("", TEST(!err), "address from ipv4 err %d", err);
-    ADDTESTWITH(TEST(to[0]==ta4[0]));
+    ADDTESTWITH(0,TEST(to[0]==ta4[0]));
     printf("\n");
 
-    err = address_from_ipv6(&a,&ta6,port);
+    err = address_from_ipv6(a,&ta6,port);
     PRINT("from_ipv6", "\n", "%s:%d", MEM(0,ta6,16), port);
     PRINT("", TEST(!err), "address from ipv6 err %d", err);
-    ADDTESTWITH(TEST(to[0]==ta6[0]));
+    ADDTESTWITH(0,TEST(to[0]==ta6[0]));
     printf("\n");
 
-    err = address_from_name(&a,"192.0.2.0",port,0);
+    err = address_from_name(a,"192.0.2.0",port,0);
     PRINT("from_name", "\n", "\"192.0.2.0\"");
     PRINT("", TEST(!err), "address from name err %d", err);
     ADDTESTWOUT(TEST(to[0]==0xc0));
     printf("\n");
 
-    err = address_from_name(&a,"2001:db8::",port,0);
+    err = address_from_name(a,"2001:db8::",port,0);
     PRINT("from_name", "\n", "\"2001:db8::\"");
     PRINT("", TEST(!err), "address from name err %d", err);
     ADDTESTWOUT(TEST(to[0]==0x20));
     printf("\n");
 
-    err = address_from_name(&a,"www.google.com",port,1);
-    PRINT("from_name", "\n", "\"www.google.com\"");
-    PRINT("", TEST(!err), "address from name err %d", err);
-    ADDTESTWITH("\n");
+    count = sizeof(a)/sizeof(address_t);
+    err = address_all_from_name(a,&count,"www.google.com",port,1);
+    PRINT("all_from", "\n", "\"www.google.com\"");
+    PRINT("", TEST(!err), "address all from name count:%d err %d", count, err);
+    
+    for(;count;count--) {
+        ADDTESTWITH((count-1),"\n");
+    }
     printf("\n");
 
-    err = address_loopback(&a,port);
+    err = address_loopback(a,port);
     PRINT("loopback", TEST(!err), "address loopback err %d", err);
-    ADDTESTWITH(TEST(to[0]==127 || to[15]==1));
+    ADDTESTWITH(0,TEST(to[0]==127 || to[15]==1));
     printf("\n");
     
-    err = address_host(&a,port);
-    PRINT("local", TEST(!err), "address local err %d", err);
-    ADDTESTWITH("\n");
+    err = address_host(a,port);
+    PRINT("local", TEST(!err), "address host err %d", err);
+    ADDTESTWITH(0,"\n");
 }
 
 #include "oi_socket.h"
 void testsocket() {
     int err;
-    char data[] = {104,101,108,108,111};
+    //char data[] = {104,101,108,108,111};
     address_t temp;
     socket_t s0,s1,s2;
 
-    err = socket_create(&s0,UDP,1);
-    PRINT("create", TEST(!err), "creating dual socket err %d", err);
-    err = socket_create_ipv4(&s1,UDP,1);
-    PRINT("", TEST(!err), "creating ipv4 socket err %d", err);
-    err = socket_create_ipv6(&s2,UDP,1);
-    PRINT("", TEST(!err), "creating ipv6 socket err %d", err);
-    
-    address_from_name(&temp,"127.0.0.1",12347,1);
+    err = socket_create(&s0,SOCKET_UDP,12345,1);
+    PRINT("create", TEST(!err), "creating socket on 12345 err %d", err);
 
-//    err = socket_bind(&s0,12345);
-    err = socket_bind_address(&s0,&temp);
-    PRINT("create", TEST(!err), "binding dual socket (12345) err %d", err);
-//    err = socket_bind(&s1,12346);
-    err = socket_bind_address(&s1,&temp);
-    PRINT("", TEST(!err), "binding ipv4 socket (12346) err %d", err);
-//    err = socket_bind(&s2,12346);
-    err = socket_bind_address(&s2,&temp);
-    PRINT("", TEST(!err), "binding ipv6 socket (12346) err %d", err);
-#if 0
-//    err = socket_bind(&s0,12345);
-    err = socket_bind_address(&s0,&temp);
-    PRINT("create", TEST(!err), "binding dual socket (12345) %d", err);
-//    err = socket_bind(&s1,12346);
-    err = socket_bind_address(&s1,&temp);
-    PRINT("", TEST(!err), "binding ipv4 socket (12346) %d", err);
-//    err = socket_bind(&s2,12346);
-    err = socket_bind_address(&s2,&temp);
-    PRINT("", TEST(!err), "binding ipv6 socket (12346) %d", err);
-#endif
+    address_from_name(&temp,"127.0.0.1",4321,0);
+    err = socket_create_address(&s1,SOCKET_UDP,&temp,1);
+    PRINT("", TEST(!err), "creating socket on 127.0.0.1:4321 err %d", err);
+
+    err = socket_create(&s2,SOCKET_UDP,0,1);
+    PRINT("", TEST(!err), "creating socket on any err %d", err);
+
+//    err = socket_create_address(
+     
     err = socket_destroy(&s0) |
           socket_destroy(&s1) |
           socket_destroy(&s2);

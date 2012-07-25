@@ -23,7 +23,7 @@ typedef union {
 } address_t;
 
 oi_call address_from_ipv4(address_t * a, void * ip, uint16 port) {
-    a->ipv4.sin_family = IPV4;
+    a->ipv4.sin_family = AF_INET;
     a->ipv4.sin_port = htons(port);
     if (ip) a->ipv4.sin_addr = *(struct in_addr*)ip;
     else memset(&a->ipv4.sin_addr,0,4);
@@ -32,7 +32,7 @@ oi_call address_from_ipv4(address_t * a, void * ip, uint16 port) {
 
 oi_call address_from_ipv6(address_t * a, void * ip, uint16 port) {
     memset(a,0,sizeof(address_t));
-    a->ipv6.sin6_family = IPV6;
+    a->ipv6.sin6_family = AF_INET6;
     a->ipv6.sin6_port = htons(port);
     if (ip) a->ipv6.sin6_addr = *(struct in6_addr*)ip;
     return 0;
@@ -50,6 +50,28 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
+    freeaddrinfo(res);
+    _OI_NET_DEINIT;
+    return 0;
+}
+
+oi_call address_all_from_name(address_t * a, size_t * len, const char * s, uint16 port, int lookup) {
+    size_t t=0;
+    struct addrinfo hint, *res, *hit;
+    _OI_NET_INIT;
+    
+    memset(&hint,0,sizeof hint);
+    hint.ai_family = AF_UNSPEC;
+    hint.ai_socktype = SOCK_STREAM;
+    if (!lookup) hint.ai_flags = AI_NUMERICHOST;
+    
+    if (getaddrinfo(s,0,&hint,&res)) return 1;
+    for (hit = res; t < *len && hit; t++, hit = hit->ai_next) { 
+        memcpy(&a[t],hit->ai_addr,hit->ai_addrlen);
+        a[t].ipv4.sin_port = htons(port);
+    }
+
+    *len = t;
     freeaddrinfo(res);
     _OI_NET_DEINIT;
     return 0;
@@ -98,7 +120,7 @@ oi_call address_name(address_t * a, char * s, size_t len, int lookup) {
 }
 
 oi_func void * address_address(address_t * a, size_t * len) {
-    if (a->family == IPV4) {
+    if (a->family == AF_INET) {
         if (len) *len = 4;
         return &a->ipv4.sin_addr;
     } else {
@@ -111,7 +133,4 @@ oi_func uint16 address_port(address_t * a) {
     return ntohs(a->ipv4.sin_port);
 }
 
-oi_func int address_protocol(address_t * a) {
-    return a->family;
-}
 #endif

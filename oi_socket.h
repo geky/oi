@@ -5,125 +5,136 @@
 #include "oi_net.h"
 #include "oi_address.h"
 
-#ifdef OI_DUALSTACK
-#   define _OI_SDSTACK(sock,val) {\
-        int opt = val;            \
-        if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,&opt,sizeof opt))\
-            return 4;             \
-    }
-#else
-#   define _OI_SDSTACK(sock,val)
-#endif
+#define SOCKET_UDP SOCK_DGRAM
+#define SOCKET_TCP SOCK_STREAM
 
 #ifdef OI_WIN
-#
+#   define _OI_SOCK SOCKET
 #   define _OI_SINVAL INVALID_SOCKET
 #   define _OI_SCLOSE(sock) closesocket(sock)
 #   define _OI_SBLOCK(sock,val) {\
         u_long blk = val?0:1;    \
         if (ioctlsocket(sock,FIONBIO,&blk)) return 3;\
     }
-
-typedef struct {
-    SOCKET ipv4;
-    SOCKET ipv6;
-} socket_t;
-
 #else
 #   include <fcntl.h>
-#
+#   define _OI_SOCK signed int
 #   define _OI_SINVAL -1
 #   define _OI_SCLOSE(sock) close(sock)
 #   define _OI_SBLOCK(sock,val) \
-        if (block) fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)&~O_NONBLOCK); 
-
-typedef struct {
-    signed int ipv4;
-    signed int ipv6;
-} socket_t;
-
+        if (block) fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)&~O_NONBLOCK);
 #endif
 
+#define _OI_SMAP(addr) \
+    address_t map; \
+    memset(&map,0,sizeof map); \
+    map.ipv6.sin6_family = AF_INET6; \
+    map.ipv6.sin6_port = addr->ipv4.sin_port; \
+    memset(&map.ipv6.sin6_addr.s6_addr[10],0xff,2); \
+    memcpy(&map.ipv6.sin6_addr.s6_addr[12],&addr->ipv4.sin_addr,4);
 
-oi_call socket_create(socket_t * s, int proto, int block) { 
-    _OI_NET_INIT;
-    s->ipv6 = socket(IPV6, proto, 0);
-    _OI_SBLOCK(s->ipv6,block);
-    
-#ifdef OI_DUALSTACK
-    s->ipv4 = s->ipv6;
-    _OI_SDSTACK(s->ipv6, 0);
+#if defined(OI_DUALSTACK) 
+#define _OI_STACK(sock) { \
+    int opt = 0; \
+    if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,&opt,sizeof opt)) \
+        return 4; \
+}
+#elif defined(OI_IPV6) && defined(IPV6_V6ONLY)
+#define _OI_STACK(sock) { \
+    int opt = 1; \
+    if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,&opt,sizeof opt)) \
+        return 4; \
+}
 #else
-    s->ipv4 = socket(IPV4, proto, 0);
-    _OI_SBLOCK(s->ipv4,block);
+#define _OI_STACK(sock)
+#endif
+
+#ifdef OI_SINGLESTACK
+typedef struct {
+    _OI_SOCK ipv6;
+    _OI_SOCK ipv4;
+} socket_t;
+#else
+typedef union {
+    _OI_SOCK ipv6;
+    _OI_SOCK ipv4;
+} socket_t;
+#endif
+
+oi_call socket_create(socket_t * s, int proto, uint16 port, int block) {
+    address_t temp;
+   _OI_NET_INIT;
+#if defined(OI_IPV4) || defined(OI_SINGLESTACK)
+    s->ipv4 = socket(AF_INET, proto, 0);
+    _OI_SBLOCK(s->ipv4,block); 
+    
+    if (port) {
+        memset(&temp,0,sizeof temp.ipv4);
+        temp.ipv4.sin_family = AF_INET;
+        temp.ipv4.sin_port = htons(port);
+        if (bind(s->ipv4, &temp.raw, sizeof temp.ipv4)) return 7;
+    }
+#endif
+#if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
+    s->ipv6 = socket(AF_INET6, proto, 0);
+    _OI_STACK(s->ipv6);
+    _OI_SBLOCK(s->ipv6,block);
+
+    if (port) {
+        memset(&temp,0,sizeof temp.ipv6);
+        temp.ipv6.sin6_family = AF_INET6;
+        temp.ipv6.sin6_port = htons(port);
+        if (bind(s->ipv6, &temp.raw, sizeof temp.ipv6)) return 7;
+    }
 #endif
     return s->ipv6 == _OI_SINVAL;
 }
 
-oi_call socket_create_ipv4(socket_t * s, int proto, int block) {
+oi_call socket_create_address(socket_t * s, int proto, address_t * a, int block) {
     _OI_NET_INIT;
-    s->ipv4 = socket(IPV4, proto, 0);
-    s->ipv6 = _OI_SINVAL;
-    _OI_SBLOCK(s->ipv4, block);
-    return s->ipv4 == _OI_SINVAL;
-}
-
-oi_call socket_create_ipv6(socket_t * s, int proto, int block) {
-    _OI_NET_INIT;
-    s->ipv6 = socket(IPV6, proto, 0);
-    s->ipv4 = _OI_SINVAL;
-    _OI_SBLOCK(s->ipv6, block);
-    _OI_SDSTACK(s->ipv6, 1);
+    if (a->family == AF_INET) {
+#if defined(OI_IPV4) || defined(OI_SINGLESTACK)
+        s->ipv4 = socket(AF_INET, proto, 0);
+        _OI_SBLOCK(s->ipv4,block); 
+        if (bind(s->ipv4, &a->raw, sizeof a->ipv4)) return 7;
+#if defined(OI_SINGLESTACK)
+        s->ipv6 = _OI_SINVAL;
+#endif
+#elif defined(OI_DUALSTACK)
+        s->ipv6 = socket(AF_INET6, proto, 0);
+        _OI_STACK(s->ipv6);
+        _OI_SBLOCK(s->ipv6,block);
+        { _OI_SMAP(a) if (bind(s->ipv6, &map.raw, sizeof map.ipv6)) return 7; }
+#else
+        return 10;
+#endif    
+    } else {
+#if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
+        s->ipv6 = socket(AF_INET6, proto, 0);
+#if defined(OI_SINGLESTACK)
+        s->ipv4 = _OI_SINVAL;
+#endif
+        _OI_STACK(s->ipv6);
+        _OI_SBLOCK(s->ipv6,block);
+        if (bind(s->ipv6, &a->raw, sizeof a->ipv6)) return 7;
+#else
+        return 10;
+#endif
+    }
     return s->ipv6 == _OI_SINVAL;
 }
 
 oi_call socket_destroy(socket_t * s) {
+#if defined(OI_IPV4) || defined(OI_SINGLESTACK)
+    if (s->ipv4 != _OI_SINVAL) _OI_SCLOSE(s->ipv4);
+#endif
+#if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
     if (s->ipv6 != _OI_SINVAL) _OI_SCLOSE(s->ipv6);
-    if (s->ipv4 != _OI_SINVAL && s->ipv4 != s->ipv6) _OI_SCLOSE(s->ipv4);
+#endif
     _OI_NET_DEINIT;
     return 0;
 }
 
-oi_call socket_bind(socket_t * s, uint16 port) {
-    address_t temp;
-
-    if (s->ipv6 != _OI_SINVAL) {
-        memset(&temp,0,sizeof temp);
-        temp.ipv6.sin6_family = IPV6;
-        temp.ipv6.sin6_port = htons(port);
-        if (bind(s->ipv6, &temp.raw, sizeof temp.ipv6)) return 6;
-    }
-    
-    if (s->ipv4 != _OI_SINVAL && s->ipv4 != s->ipv6) {
-        memset(&temp,0,sizeof temp);
-        temp.ipv4.sin_family = IPV4;
-        temp.ipv4.sin_port = htons(port);
-        if (bind(s->ipv4, &temp.raw, sizeof temp.ipv4)) return 4;
-    }
-    return 0;
-}
-
-oi_call socket_bind_address(socket_t * s, address_t * a) {
-    if (a->family == IPV6 && s->ipv6 != _OI_SINVAL) {
-        return bind(s->ipv6, &a->raw, sizeof a->ipv6);
-    } else if (a->family == IPV4 && s->ipv4 != _OI_SINVAL) {
-        if (s->ipv4 != s->ipv6) {
-            return bind(s->ipv4, &a->raw, sizeof a->ipv4);
-        } else {
-            address_t temp;
-            memset(&temp,0,sizeof temp);
-            temp.ipv6.sin6_family = IPV6;
-            temp.ipv6.sin6_port = a->ipv4.sin_port;
-            temp.ipv6.sin6_addr.s6_addr[10] = 0xff;
-            temp.ipv6.sin6_addr.s6_addr[11] = 0xff;
-            memcpy(&temp.ipv6.sin6_addr.s6_addr[12],&a->ipv4.sin_addr,4);
-
-            return bind(s->ipv6, &temp.raw, sizeof temp.ipv6);
-        }
-    }
-
-    return -1;
-}
 #if 0
 oi_call tcp_connect(socket_t * s, address_t * a) {
     return connect(*s,(sockaddr*)a,sizeof(address_t));
