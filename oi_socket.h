@@ -52,7 +52,7 @@ oi_call socket_create_ipv6(socket_t * s, int proto, int block) {
 oi_call socket_destroy(socket_t * s) {
     if(closesocket(*s)) return 1;
     _OI_NET_DEINIT;
-    return 0;
+    return 0; 
 }
 
 #else

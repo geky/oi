@@ -477,17 +477,7 @@ void testaddress() {
     ADDTESTWITH(TEST(to[0]==127 || to[15]==1));
     printf("\n");
     
-    err = address_host0(&a,port);
-    PRINT("local", TEST(!err), "address local err %d", err);
-    ADDTESTWITH("\n");
-    printf("\n");
-
-    err = address_host1(&a,port);
-    PRINT("local", TEST(!err), "address local err %d", err);
-    ADDTESTWITH("\n");
-    printf("\n");
-
-    err = address_host2(&a,port);
+    err = address_host(&a,port);
     PRINT("local", TEST(!err), "address local err %d", err);
     ADDTESTWITH("\n");
 }

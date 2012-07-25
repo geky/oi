@@ -7,6 +7,7 @@
 #include <string.h>
 
 #ifndef OI_WIN
+#include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -72,30 +73,12 @@ oi_call address_loopback(address_t * a, uint16 port) {
     return 0;
 }
 
-oi_call address_host0(address_t * a, uint16 port) {
-    struct addrinfo hint, *res;
-    _OI_NET_INIT;
-    
-    memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_UNSPEC;
-    
-    if (getaddrinfo(0,0,&hint,&res)) return 1;
-    memcpy(a,res->ai_addr,res->ai_addrlen);
-    a->ipv4.sin_port = htons(port);
-    
-    freeaddrinfo(res);
-    _OI_NET_DEINIT;
-    return 0;
-}
-
-#include <unistd.h>
-oi_call address_host1(address_t * a, uint16 port) {
+oi_call address_host(address_t * a, uint16 port) {
     struct addrinfo hint, *res;
     char name[256];
     _OI_NET_INIT;
 
-    gethostname(name,sizeof name); printf("%s",name);
-
+    if (gethostname(name,sizeof name)) return 2;
     memset(&hint,0,sizeof hint);
     hint.ai_family = AF_UNSPEC;
 
@@ -107,42 +90,6 @@ oi_call address_host1(address_t * a, uint16 port) {
     _OI_NET_DEINIT;
     return 0;
 }
-
-#ifdef OI_WIN
-oi_call address_host2(address_t * a, uint16 port) {
-    SOCKET sock;
-    _OI_NET_INIT;
-    socklen_t s = sizeof a;
-    address_from_name(a,"www.google.com",port,1);
-
-    sock = socket(PF_INET6,SOCK_DGRAM, 0);
-    connect(sock,&a->raw,sizeof a);
-    if (getsockname(sock,&a->raw,&s)) printf("er");
-    closesocket(sock);
-
-    a->ipv4.sin_port = htons(port);
-    _OI_NET_DEINIT;
-    return 0;
-}
-
-#else
-#include <errno.h>
-oi_call address_host2(address_t * a, uint16 port) {
-    int sock;
-    socklen_t s = sizeof(struct sockaddr_in6);
-    address_from_name(a,"www.google.com",0,1);
-
-    sock = socket(PF_INET6,SOCK_DGRAM, 0);
-    if (connect(sock,&a->raw,s)) printf("er1[%d]",errno);
-    if (getsockname(sock,&a->raw,&s)) printf("er2");
-    close(sock);
-
-    a->ipv4.sin_port = htons(port);
-    return 0;
-}
-
-#endif
-
 
 oi_call address_name(address_t * a, char * s, size_t len, int lookup) {
     int err;
