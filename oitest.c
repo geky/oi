@@ -4,9 +4,19 @@
 #include <string.h>
 #include <stdarg.h>
 
+#ifdef COLOR
+#define TXTY "\e[0;33m"
+#define TXTR "\e[0;31m"
+#define TXTN "\e[0m"
+#else
+#define TXTY 
+#define TXTR
+#define TXTN
+#endif
+
 char memmm[2][40];
 volatile char rrr = 0;
-#define TEST(yy) ((yy) ? ": success\n" : (rrr=1, ": FAILURE!\n"))
+#define TEST(yy) ((yy) ? ": success\n" : (rrr=1, ":"TXTR" FAILURE!"TXTN"\n"))
 
 void PRINT(const char * tt, const char * test, const char * ss, ...) {
     va_list args;
@@ -508,25 +518,23 @@ void testsocket() {
     address_t temp;
     socket_t s0,s1,s2;
 
-    err = socket_create(&s0,SOCKET_UDP,12345,1);
-    PRINT("create", TEST(!err), "creating socket on 12345 err %d", err);
+    err = socket_create(&s0,SOCKET_TCP,12345);
+    PRINT("create", TEST(!err), "creating tcp socket on 12345 err %d", err);
 
-    address_from_name(&temp,"127.0.0.1",4321,0);
-    err = socket_create_address(&s1,SOCKET_UDP,&temp,1);
-    PRINT("", TEST(!err), "creating socket on 127.0.0.1:4321 err %d", err);
+    address_from_name(&temp,"127.0.0.1",4321,1);
+    err = socket_create_address(&s1,SOCKET_TCP,&temp);
+    PRINT("", TEST(!err), "creating tcp socket 127.0.0.1:4321 err %d", err);
 
-    err = socket_create(&s2,SOCKET_UDP,0,1);
-    PRINT("", TEST(!err), "creating socket on any err %d", err);
-
-//    err = socket_create_address(
+    err = socket_create(&s2,SOCKET_TCP,0);
+    PRINT("", TEST(!err), "creating tcp socket on any err %d", err);
      
     err = socket_destroy(&s0) |
           socket_destroy(&s1) |
           socket_destroy(&s2);
-    PRINT("destroy", TEST(!err), "destroying sockets %d", err);
+    PRINT("destroy", TEST(!err), "destroying sockets err %d", err);
 }
 
-#define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf("\noi_"#file" :\n"); test##file();}
+#define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf(TXTY"\noi_"#file" :\n"TXTN); test##file();}
 
 int main(int argc, char ** argv) {
     int all = argc>1; 
@@ -546,7 +554,7 @@ int main(int argc, char ** argv) {
         TESTF(socket);
     }
 
-    if (rrr) printf("\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n");
+    if (rrr) printf(TXTR"\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n"TXTN);
     else printf("\noi is functional on this system.\nsuccess!\n\n");
 
 #ifdef WAIT    
