@@ -35,7 +35,7 @@ typedef struct {
 #   define _OI_SINVAL -1
 #   define _OI_SCLOSE(sock) close(sock)
 #   define _OI_SBLOCK(sock,val) \
-        if (block) fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)&~O_NONBLOCK);
+        if (block) fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)&~O_NONBLOCK); 
 
 typedef struct {
     signed int ipv4;
@@ -46,6 +46,7 @@ typedef struct {
 
 
 oi_call socket_create(socket_t * s, int proto, int block) { 
+    _OI_NET_INIT;
     s->ipv6 = socket(IPV6, proto, 0);
     _OI_SBLOCK(s->ipv6,block);
     
@@ -54,12 +55,13 @@ oi_call socket_create(socket_t * s, int proto, int block) {
     _OI_SDSTACK(s->ipv6, 0);
 #else
     s->ipv4 = socket(IPV4, proto, 0);
-    _OI_SBLOCK(s->sock.ipv4,block);
+    _OI_SBLOCK(s->ipv4,block);
 #endif
     return s->ipv6 == _OI_SINVAL;
 }
 
 oi_call socket_create_ipv4(socket_t * s, int proto, int block) {
+    _OI_NET_INIT;
     s->ipv4 = socket(IPV4, proto, 0);
     s->ipv6 = _OI_SINVAL;
     _OI_SBLOCK(s->ipv4, block);
@@ -67,6 +69,7 @@ oi_call socket_create_ipv4(socket_t * s, int proto, int block) {
 }
 
 oi_call socket_create_ipv6(socket_t * s, int proto, int block) {
+    _OI_NET_INIT;
     s->ipv6 = socket(IPV6, proto, 0);
     s->ipv4 = _OI_SINVAL;
     _OI_SBLOCK(s->ipv6, block);
