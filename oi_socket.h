@@ -121,7 +121,7 @@ oi_call socket_create_address(socket_t * s, int proto, address_t * a, int block)
         return 10;
 #endif
     }
-    return s->ipv6 == _OI_SINVAL;
+    return s->ipv6 == _OI_SINVAL && s->ipv4 == _OI_SINVAL;
 }
 
 oi_call socket_destroy(socket_t * s) {
