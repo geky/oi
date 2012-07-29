@@ -7,6 +7,7 @@
 #define OI_NET 1
 
 #include "oi_os.h"
+#include <string.h>
 
 #ifdef OI_MSVC
 #   pragma comment(lib,"ws2_32.lib")
@@ -32,6 +33,14 @@
 #   define _OI_NET_ERR WSAGetLastError()
 #
 #else
+#
+#   include <unistd.h>
+#   include <netinet/in.h>
+#   include <arpa/inet.h>
+#   include <sys/types.h>
+#   include <sys/socket.h>
+#   include <netdb.h>
+#
 #   define _OI_NET_INIT
 #   define _OI_NET_DEINIT
 #   define _OI_NET_ERR errno

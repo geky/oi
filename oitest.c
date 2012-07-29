@@ -586,7 +586,7 @@ void testsocket() {
     PRINT("create", TEST(!err), "creating udp socket on 12345 err %d", err);
 
     address_loopback(&temp,4321);
-    err = socket_create_address(&s1,SOCKET_UDP,&temp);
+    err = socket_create_on(&s1,SOCKET_UDP,&temp);
     PRINT("", TEST(!err), "creating udp socket on lo:4321 err %d", err);
 
     err = socket_create(&s2,SOCKET_UDP,0);
@@ -621,12 +621,11 @@ void testsocket() {
           socket_destroy(&s2);
     PRINT("destroy", TEST(!err), "destroying sockets err %d", err);
 
-
     err = socket_create(&s0,SOCKET_TCP,12345);
     PRINT("create", TEST(!err), "creating tcp socket on 12345 err %d", err);
 
     address_loopback(&temp,4321);
-    err = socket_create_address(&s1,SOCKET_TCP,&temp);
+    err = socket_create_on(&s1,SOCKET_TCP,&temp);
     PRINT("", TEST(!err), "creating tcp socket on lo:4321 err %d", err);
 
     err = socket_create(&s2,SOCKET_TCP,0);

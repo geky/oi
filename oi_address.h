@@ -4,15 +4,13 @@
 #include "oi_os.h"
 #include "oi_net.h"
 #include "oi_types.h"
-#include <string.h>
 
-#ifndef OI_WIN
-#include <unistd.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#if defined(OI_IPV4)
+#   define _OI_AFAMILY AF_INET
+#elif defined(OI_IPV6)
+#   define _OI_AFAMILY AF_INET6
+#else
+#   define _OI_AFAMILY AF_UNSPEC
 #endif
 
 typedef union {
@@ -43,7 +41,7 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_UNSPEC;
+    hint.ai_family = _OI_AFAMILY;
     if (!lookup) hint.ai_flags = AI_NUMERICHOST;
     
     if (getaddrinfo(s,0,&hint,&res)) return 1;
@@ -61,7 +59,7 @@ oi_call address_all_from_name(address_t * a, size_t * len, const char * s, uint1
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_UNSPEC;
+    hint.ai_family = _OI_AFAMILY;
     hint.ai_socktype = SOCK_STREAM;
     if (!lookup) hint.ai_flags = AI_NUMERICHOST;
     
@@ -82,7 +80,7 @@ oi_call address_loopback(address_t * a, uint16 port) {
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_UNSPEC;
+    hint.ai_family =_OI_AFAMILY;
     
     if (getaddrinfo("localhost",0,&hint,&res)) return 1;
     memcpy(a,res->ai_addr,res->ai_addrlen);
@@ -100,7 +98,7 @@ oi_call address_host(address_t * a, uint16 port) {
 
     if (gethostname(name,sizeof name)) return 2;
     memset(&hint,0,sizeof hint);
-    hint.ai_family = AF_UNSPEC;
+    hint.ai_family = _OI_AFAMILY;
 
     if (getaddrinfo(name,0,&hint,&res)) return 1;
     memcpy(a,res->ai_addr,res->ai_addrlen);

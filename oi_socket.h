@@ -129,7 +129,7 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
     return 0;
 }
 
-oi_call socket_create_address(socket_t * s, int proto, address_t * a) {
+oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
     if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
         _OI_NET_INIT;
