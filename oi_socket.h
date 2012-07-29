@@ -27,13 +27,13 @@
 
 #if defined(OI_DUALSTACK) 
 #define _OI_STACK(sock) { \
-    int opt = 0; \
+    const char opt = 0; \
     if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,&opt,sizeof opt)) \
         _OI_SDIE(4); \
 }
 #elif defined(OI_IPV6) && defined(IPV6_V6ONLY)
 #define _OI_STACK(sock) { \
-    int opt = 1; \
+    const char opt = 1; \
     if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,&opt,sizeof opt)) \
         _OI_SDIE(4); \
 }
@@ -55,7 +55,6 @@ typedef struct {
 #else
 typedef union {
     _OI_SOCK ipv6;
-    _OI_SOCK ipv4;
 } socket_t;
 #endif
 
@@ -77,15 +76,15 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
     s->ipv6 = _OI_SINVAL;
 #endif
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
-    s->ipv4 = socket(AF_INET, proto, 0);
-    if (s->ipv4 == _OI_SINVAL) _OI_SDIE(-1);
-    _OI_SBLOCK(s->ipv4); 
+    s->ipv6 = socket(AF_INET, proto, 0);
+    if (s->ipv6 == _OI_SINVAL) _OI_SDIE(-1);
+    _OI_SBLOCK(s->ipv6); 
     
     if (port) {
         memset(&temp,0,sizeof temp.ipv4);
         temp.ipv4.sin_family = AF_INET;
         temp.ipv4.sin_port = htons(port);
-        if (bind(s->ipv4, &temp.raw, sizeof temp.ipv4)) _OI_SDIE(7);
+        if (bind(s->ipv6, &temp.raw, sizeof temp.ipv4)) _OI_SDIE(7);
     }
 #endif
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
@@ -101,7 +100,7 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
         if (bind(s->ipv6, &temp.raw, sizeof temp.ipv6)) _OI_SDIE(7);
     }
 #endif
-    return s->ipv6 == _OI_SINVAL;
+    return 0;
 }
 
 oi_call socket_create_address(socket_t * s, int proto, address_t * a) {
@@ -111,11 +110,11 @@ oi_call socket_create_address(socket_t * s, int proto, address_t * a) {
 #if defined(OI_SINGLESTACK)
         s->ipv6 = _OI_SINVAL;
 #endif
-        s->ipv4 = socket(AF_INET, proto, 0);
-        if (s->ipv4 == _OI_SINVAL) _OI_SDIE(-1);
+        s->ipv6 = socket(AF_INET, proto, 0);
+        if (s->ipv6 == _OI_SINVAL) _OI_SDIE(-1);
 
-        _OI_SBLOCK(s->ipv4); 
-        if (bind(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(7);
+        _OI_SBLOCK(s->ipv6); 
+        if (bind(s->ipv6, &a->raw, sizeof a->ipv4)) _OI_SDIE(7);
 #elif defined(OI_DUALSTACK)
         _OI_NET_INIT;
         s->ipv6 = socket(AF_INET6, proto, 0);
@@ -146,12 +145,12 @@ oi_call socket_create_address(socket_t * s, int proto, address_t * a) {
         return 10;
 #endif
     }
-    return s->ipv6 == _OI_SINVAL && s->ipv4 == _OI_SINVAL;
+    return 0;
 }
 
 oi_call socket_destroy(socket_t * s) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
-    if (s->ipv4 != _OI_SINVAL) _OI_SCLOSE(s->ipv4);
+    if (s->ipv6 != _OI_SINVAL) _OI_SCLOSE(s->ipv6);
 #endif
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
     if (s->ipv6 != _OI_SINVAL) _OI_SCLOSE(s->ipv6);
@@ -163,7 +162,7 @@ oi_call socket_destroy(socket_t * s) {
 oi_call tcp_connect(socket_t * s, address_t * a) {
     if (a->family == AF_INET) {
 #if defined(OI_IPV4)
-        return connect(s->ipv4, &a->raw, sizeof a->ipv4);
+        return connect(s->ipv6, &a->raw, sizeof a->ipv4);
 #elif defined(OI_SINGLESTACK)
         if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) return -1;
         if (s->ipv6 != _OI_SINVAL) {
@@ -192,14 +191,38 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
 #endif
     }
 }
-#if 0
+
+
 oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
     int na_s = sizeof(address_t);
-    if (listen(*s,5)) return 2;
-    *ns = accept(*s,(sockaddr*)na,&na_s);
-    return (*ns == -1);
+#if defined(OI_SINGLESTACK)    
+    fd_set fset;
+    
+    if (listen(s->ipv4,5)) return 2;
+#endif
+    
+    if (listen(s->ipv6,5)) return 2;
+    
+#if defined(OI_SINGLESTACK)      
+    FD_ZERO(&fset);
+    FD_SET(s->ipv4,&fset);
+    FD_SET(s->ipv6,&fset);
+    select(s->ipv4>s->ipv6 ? s->ipv4 : s->ipv6, &fset, 0, 0, 0);
+    if (FD_ISSET(ns->ipv4,&fset)) {
+        ns->ipv4 = accept(s->ipv4, &na->raw, &na_s);
+        ns->ipv6 = _OI_SINVAL;
+        return ns->ipv4 == _OI_SINVAL;
+    } else {
+        ns->ipv6 = accept(s->ipv6, &na->raw, &na_s);
+        ns->ipv4 = _OI_SINVAL;
+        return ns->ipv6 == _OI_SINVAL;
+    }        
+#else
+    ns->ipv6 = accept(s->ipv6,&na->raw,&na_s);
+    return ns->ipv6 == _OI_SINVAL;
+#endif
 }
-
+#if 0
 oi_call tcp_send(socket_t * s, void * buf, size_t len) {
     return send(*s,buf,len,0) == -1;
 }
