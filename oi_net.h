@@ -41,6 +41,7 @@
 #   include <sys/socket.h>
 #   include <netdb.h>
 #   include <fcntl.h>
+#   include <errno.h>
 #
 #   define _OI_NET_INIT
 #   define _OI_NET_DEINIT

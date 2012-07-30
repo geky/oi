@@ -38,13 +38,14 @@ oi_call address_from_ipv6(address_t * a, void * ip, uint16 port) {
 
 oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup) {
     struct addrinfo hint, *res;
+    int err;
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
     hint.ai_family = _OI_AFAMILY;
     if (!lookup) hint.ai_flags = AI_NUMERICHOST;
     
-    if (getaddrinfo(s,0,&hint,&res)) return 1;
+    if ((err = getaddrinfo(s,0,&hint,&res))) return err;
     memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
@@ -56,6 +57,7 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
 oi_call address_all_from_name(address_t * a, size_t * len, const char * s, uint16 port, int lookup) {
     size_t t=0;
     struct addrinfo hint, *res, *hit;
+    int err;
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
@@ -63,7 +65,7 @@ oi_call address_all_from_name(address_t * a, size_t * len, const char * s, uint1
     hint.ai_socktype = SOCK_STREAM;
     if (!lookup) hint.ai_flags = AI_NUMERICHOST;
     
-    if (getaddrinfo(s,0,&hint,&res)) return 1;
+    if ((err = getaddrinfo(s,0,&hint,&res))) return err;
     for (hit = res; t < *len && hit; t++, hit = hit->ai_next) { 
         memcpy(&a[t],hit->ai_addr,hit->ai_addrlen);
         a[t].ipv4.sin_port = htons(port);
@@ -77,12 +79,13 @@ oi_call address_all_from_name(address_t * a, size_t * len, const char * s, uint1
 
 oi_call address_loopback(address_t * a, uint16 port) {
     struct addrinfo hint, *res;
+    int err;
     _OI_NET_INIT;
     
     memset(&hint,0,sizeof hint);
     hint.ai_family =_OI_AFAMILY;
     
-    if (getaddrinfo("localhost",0,&hint,&res)) return 1;
+    if ((err = getaddrinfo("localhost",0,&hint,&res))) return err;
     memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
@@ -94,13 +97,14 @@ oi_call address_loopback(address_t * a, uint16 port) {
 oi_call address_host(address_t * a, uint16 port) {
     struct addrinfo hint, *res;
     char name[256];
+    int err;
     _OI_NET_INIT;
 
-    if (gethostname(name,sizeof name)) return 2;
+    if (gethostname(name,sizeof name)) return _OI_NET_ERR;
     memset(&hint,0,sizeof hint);
     hint.ai_family = _OI_AFAMILY;
 
-    if (getaddrinfo(name,0,&hint,&res)) return 1;
+    if ((err = getaddrinfo(name,0,&hint,&res))) return err;
     memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     

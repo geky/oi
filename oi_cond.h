@@ -1,4 +1,4 @@
-//requires -pthread on posix machines
+//requires -pthread in posix
 #ifndef OI_COND
 #define OI_COND 1
 #include "oi_os.h"

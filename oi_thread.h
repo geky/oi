@@ -54,6 +54,7 @@ oi_call thread_terminate(thread_t * t) {
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <errno.h>
 
 typedef struct {
     pthread_t i;
@@ -110,7 +111,7 @@ oi_call thread_sleep(unsigned int ms) {
 }
 
 oi_call thread_yield(void) {
-    return sched_yield();
+    return sched_yield() ? errno : 0;
 }
 
 oi_call thread_terminate(thread_t * t) {

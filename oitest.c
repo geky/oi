@@ -693,7 +693,7 @@ int main(int argc, char ** argv) {
     }
 
     if (rrr) printf(TXTR"\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n"TXTN);
-    else printf("\noi is functional on this system.\nsuccess!\n\n");
+    else printf("\noi is functional on this system.\n"TXTY"success!\n\n"TXTN);
 
 #ifdef WAIT    
     printf("Press enter to continue\n");
