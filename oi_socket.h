@@ -25,7 +25,7 @@
 #endif
 
 #if defined(OI_DUALSTACK) 
-#define _OI_SOPT(sock) { \
+#define _OI_SOPT6(sock) { \
     int opt = 0; \
     if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,(char*)&opt,sizeof opt)) \
         _OI_SDIE(s,4); \
@@ -33,8 +33,14 @@
     if (setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof opt)) \
         _OI_SDIE(s,6); \
 }
-#elif defined(OI_IPV6) && defined(IPV6_V6ONLY)
-#define _OI_SOPT(sock) { \
+#else
+#define _OI_SOPT4(sock) { \
+    int opt = 1; \
+    if (setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof opt)) \
+        _OI_SDIE(s,6); \
+}
+#if defined(IPV6_V6ONLY)
+#define _OI_SOPT6(sock) { \
     int opt = 1; \
     if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,(char*)&opt,sizeof opt)) \
         _OI_SDIE(s,4); \
@@ -42,11 +48,8 @@
         _OI_SDIE(s,6); \
 }
 #else
-#define _OI_SOPT(sock) { \
-    int opt = 1; \
-    if (setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof opt)) \
-        _OI_SDIE(s,6); \
-}
+#define _OI_SOPT6(sock) _OI_SOPT4(sock)
+#endif
 #endif
 
 
@@ -102,7 +105,7 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
     s->ipv4 = socket(AF_INET, proto, 0);
     if (s->ipv4 == _OI_SINVAL) _OI_SDIE(s,-1);
-    _OI_SOPT(s->ipv4);
+    _OI_SOPT4(s->ipv4);
     _OI_SBLOCK(s->ipv4);
     
     if (port) {
@@ -115,7 +118,7 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
     s->ipv6 = socket(AF_INET6, proto, 0);
     if (s->ipv6 == _OI_SINVAL) _OI_SDIE(s,-1);
-    _OI_SOPT(s->ipv6);
+    _OI_SOPT6(s->ipv6);
     _OI_SBLOCK(s->ipv6);
 
     if (port) {
@@ -137,14 +140,14 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
 #endif
         s->ipv4 = socket(AF_INET, proto, 0);
         if (s->ipv4 == _OI_SINVAL) _OI_SDIE(s,-1);
-        _OI_SOPT(s->ipv4);
+        _OI_SOPT4(s->ipv4);
         _OI_SBLOCK(s->ipv4);
         if (bind(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(s,7);
 #elif defined(OI_DUALSTACK)
         _OI_NET_INIT;
         s->ipv6 = socket(AF_INET6, proto, 0);
         if (s->ipv6 == _OI_SINVAL) _OI_SDIE(s,-1);
-        _OI_SOPT(s->ipv6);
+        _OI_SOPT6(s->ipv6);
         _OI_SBLOCK(s->ipv6);
         {   address_t map;
             _OI_SMAP(a,map) 
@@ -162,7 +165,7 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
 #endif
         s->ipv6 = socket(AF_INET6, proto, 0);
         if (s->ipv6 == _OI_SINVAL) _OI_SDIE(s,-1);
-        _OI_SOPT(s->ipv6);
+        _OI_SOPT6(s->ipv6);
         _OI_SBLOCK(s->ipv6);
         if (bind(s->ipv6, &a->raw, sizeof a->ipv6)) _OI_SDIE(s,7);
 #else
@@ -228,41 +231,43 @@ oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
     if (s->ipv4 == _OI_SINVAL) {
         if (listen(s->ipv6,5)) return 2;
         ns->ipv6 = accept(s->ipv6,na?&na->raw:&dump.raw,&na_s);
-        if (ns->ipv6 != _OI_SINVAL) _OI_NET_INIT;
+        if (ns->ipv6 != _OI_SINVAL) {_OI_NET_INIT; _OI_SBLOCK(ns->ipv6);}
         return ns->ipv6 == _OI_SINVAL;
         
     } else if (s->ipv6 == _OI_SINVAL) {
         if (listen(s->ipv4,5)) return 2;
         ns->ipv4 = accept(s->ipv4,na?&na->raw:&dump.raw,&na_s);
-        if (ns->ipv4 != _OI_SINVAL) _OI_NET_INIT;
+        if (ns->ipv4 != _OI_SINVAL) {_OI_NET_INIT; _OI_SBLOCK(ns->ipv4);}
         return ns->ipv4 == _OI_SINVAL;      
         
     } else {
         fd_set fset;
-  
+        
         if (listen(s->ipv4,5)) return 2;
         if (listen(s->ipv6,5)) return 2;
-
+        
         FD_ZERO(&fset);
         FD_SET(s->ipv4,&fset);
         FD_SET(s->ipv6,&fset);
-        select(s->ipv4>s->ipv6 ? s->ipv4 : s->ipv6, &fset, 0, 0, 0);
-        if (FD_ISSET(s->ipv4,&fset)) {
-            ns->ipv4 = accept(s->ipv4, na?&na->raw:&dump.raw, &na_s);
-            if (ns->ipv4 != _OI_SINVAL) _OI_NET_INIT;
-            return ns->ipv4 == _OI_SINVAL;
-        } else {
-            ns->ipv6 = accept(s->ipv6, na?&na->raw:&dump.raw, &na_s);
-            if (ns->ipv6 != _OI_SINVAL) _OI_NET_INIT;
-            return ns->ipv6 == _OI_SINVAL;
-        }       
+        while (0 < select(s->ipv4>s->ipv6 ? s->ipv4 : s->ipv6, &fset,0,0,0)) {
+            if (FD_ISSET(s->ipv4,&fset)) {
+                ns->ipv4 = accept(s->ipv4, na?&na->raw:&dump.raw, &na_s);
+                if (ns->ipv4!=_OI_SINVAL) {_OI_NET_INIT; _OI_SBLOCK(ns->ipv4);}
+                return ns->ipv4 == _OI_SINVAL;
+            } else if (FD_ISSET(s->ipv6,&fset)) {
+                ns->ipv6 = accept(s->ipv6, na?&na->raw:&dump.raw, &na_s);
+                if (ns->ipv6!=_OI_SINVAL) {_OI_NET_INIT; _OI_SBLOCK(ns->ipv6);}
+                return ns->ipv6 == _OI_SINVAL;
+            }
+        } 
+        return -1;      
     } 
 #else
     ns->ipv6 = _OI_SINVAL;
     if (listen(s->ipv6,5)) return 2;
 
     ns->ipv6 = accept(s->ipv6,na?&na->raw:&dump.raw,&na_s);
-    if (ns->ipv6 != _OI_SINVAL) _OI_NET_INIT;
+    if (ns->ipv6 != _OI_SINVAL) {_OI_NET_INIT; _OI_SBLOCK(ns->ipv6);}
 #if defined(OI_DUALSTACK)
     _OI_SUMAP(na);
 #endif
@@ -325,7 +330,7 @@ oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
 }
 
 oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
-    int newlen;
+    int newlen = -1;
     size_t na_s = sizeof(address_t);
     address_t dump;
     
@@ -339,15 +344,18 @@ oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
         FD_ZERO(&fset);
         FD_SET(s->ipv4,&fset);
         FD_SET(s->ipv6,&fset);
-        select(s->ipv4>s->ipv6 ? s->ipv4 : s->ipv6, &fset, 0, 0, 0);
-        if (FD_ISSET(s->ipv4,&fset)) {
-            newlen = recvfrom(s->ipv4, buf, *len, 0, na?&na->raw:&dump.raw, &na_s);
-        } else {
-            newlen = recvfrom(s->ipv6, buf, *len, 0, na?&na->raw:&dump.raw, &na_s);
-        }       
+        while (0 < select(s->ipv4>s->ipv6?s->ipv4:s->ipv6, &fset,0,0,0)) {
+            if (FD_ISSET(s->ipv4,&fset)) {
+                newlen = recvfrom(s->ipv4, buf, *len, 0, na?&na->raw:&dump.raw, &na_s);
+                break;
+            } else if (FD_ISSET(s->ipv6,&fset)) {
+                newlen = recvfrom(s->ipv6, buf, *len, 0, na?&na->raw:&dump.raw, &na_s);
+                break;
+            }
+        }
     } 
 #else
-    newlen = recvfrom(s->ipv6, buf, *len, 0, na?&na->raw:dump, &na_s);
+    newlen = recvfrom(s->ipv6, buf, *len, 0, na?&na->raw:&dump.raw, &na_s);
 #if defined(OI_DUALSTACK)
     _OI_SUMAP(na);
 #endif
