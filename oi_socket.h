@@ -141,7 +141,7 @@ oi_call socket_create_address(socket_t * s, int proto, address_t * a) {
         if (s->ipv4 == _OI_SINVAL) _OI_SDIE(-1);
         _OI_SOPT(s->ipv4);
         _OI_SBLOCK(s->ipv4);
-        if (bind(s->ipv6, &a->raw, sizeof a->ipv4)) _OI_SDIE(7);
+        if (bind(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(7);
 #elif defined(OI_DUALSTACK)
         _OI_NET_INIT;
         s->ipv6 = socket(AF_INET6, proto, 0);

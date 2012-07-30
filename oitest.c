@@ -512,21 +512,44 @@ void testaddress() {
 }
 
 #include "oi_socket.h"
+void testudpthread(void * s) {
+    int err;
+    size_t len = 10;
+    char msg[len];
+    address_t a;
+    
+    err = udp_rec((socket_t*)s,msg,&len,&a);
+    PRINT("tcp_rec", TEST(!err), "server rec   [%s] len %d err %d", msg, len, err);
+    
+    strcpy(msg,"bye 1");
+    len = 10;
+    err = udp_send((socket_t*)s,msg,&len,&a);
+    PRINT("tcp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
+    
+    err = udp_rec((socket_t*)s,msg,&len,&a);
+    PRINT("tcp_rec", TEST(!err), "server rec   [%s] len %d err %d", msg, len, err);
+    
+    strcpy(msg,"bye 1");
+    len = 10;
+    err = udp_send((socket_t*)s,msg,&len,&a);
+    PRINT("tcp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
+}
+
 void testsocket() {
     int err;
     //char data[] = {104,101,108,108,111};
     address_t temp;
     socket_t s0,s1,s2;
 
-    err = socket_create(&s0,SOCKET_TCP,12345);
-    PRINT("create", TEST(!err), "creating tcp socket on 12345 err %d", err);
+    err = socket_create(&s0,SOCKET_UDP,12345);
+    PRINT("create", TEST(!err), "creating udp socket on 12345 err %d", err);
 
     address_from_name(&temp,"127.0.0.1",4321,1);
-    err = socket_create_address(&s1,SOCKET_TCP,&temp);
-    PRINT("", TEST(!err), "creating tcp socket 127.0.0.1:4321 err %d", err);
+    err = socket_create_address(&s1,SOCKET_UDP,&temp);
+    PRINT("", TEST(!err), "creating udp socket 127.0.0.1:4321 err %d", err);
 
-    err = socket_create(&s2,SOCKET_TCP,0);
-    PRINT("", TEST(!err), "creating tcp socket on any err %d", err);
+    err = socket_create(&s2,SOCKET_UDP,0);
+    PRINT("", TEST(!err), "creating udp socket on any err %d", err);
      
     err = socket_destroy(&s0) |
           socket_destroy(&s1) |
