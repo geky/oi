@@ -264,7 +264,7 @@ oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
 
 oi_call tcp_send(socket_t * s, void * buf, size_t * len) {
     size_t sendlen = *len;
-    size_t newlen;
+    int newlen;
     *len = 0;
     while(*len < sendlen) {
 #if defined(OI_SINGLESTACK)
@@ -273,50 +273,43 @@ oi_call tcp_send(socket_t * s, void * buf, size_t * len) {
         newlen = send(s->ipv6,*len+(char*)buf,sendlen-*len,0);
 #endif
         if (newlen < 0) return -1;
-        *len += newlen;
+        *len += (size_t)newlen;
     }
     return 0;
 }
 
 oi_call tcp_rec(socket_t * s, void * buf, size_t * len) {
+    int newlen;
 #if defined(OI_SINGLESTACK)
-    *len = recv(s->ipv6==_OI_SINVAL?s->ipv4:s->ipv6,buf,*len,0);
+    newlen = recv(s->ipv6==_OI_SINVAL?s->ipv4:s->ipv6,buf,*len,0);
 #else
-    *len = recv(s->ipv6,buf,*len,0);
+    newlen = recv(s->ipv6,buf,*len,0);
 #endif
-    if (*len < 0) {
-        *len = 0;
-        return -1;
-    } return 0;
+    *len = newlen<0 ? 0 : newlen;
+    return newlen<0;
 }
 
 oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
+    int newlen;
     if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
-        *len = sendto(s->ipv4, buf, *len, 0, &a->raw, sizeof a->ipv4);
-        if (*len < 0) {
-            *len = 0;
-            return -1;
-        } return 0;
-        
+        newlen = sendto(s->ipv4, buf, *len, 0, &a->raw, sizeof a->ipv4);
+        *len = newlen<0 ? 0 : newlen;
+        return newlen<0;
 #elif defined(OI_DUALSTACK)
         address_t map;
         _OI_SMAP(a,map)
-        *len = sendto(s->ipv6, buf, *len, 0, &map.raw, sizeof map.ipv6);
-        if (*len < 0) {
-            *len = 0;
-            return -1;
-        } return 0;
+        newlen = sendto(s->ipv6, buf, *len, 0, &map.raw, sizeof map.ipv6);
+        *len = newlen<0 ? 0 : newlen;
+        return newlen<0;
 #else
         return 10;
 #endif
     } else {
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
-        *len = sendto(s->ipv6, buf, *len, 0, &a->raw, sizeof a->ipv6);
-        if (*len < 0) {
-            *len = 0;
-            return -1;
-        } return 0;
+        newlen = sendto(s->ipv6, buf, *len, 0, &a->raw, sizeof a->ipv6);
+        *len = newlen<0 ? 0 : newlen;
+        return newlen<0;
 #else
         return 10;
 #endif
@@ -324,12 +317,13 @@ oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
 }
 
 oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
+    int newlen;
     size_t na_s = na ? sizeof(address_t) : 0;
 #if defined(OI_SINGLESTACK)
     if (s->ipv4 == _OI_SINVAL) {
-        *len = recvfrom(s->ipv6, buf, *len, 0, &na->raw, &na_s);
+        newlen = recvfrom(s->ipv6, buf, *len, 0, &na->raw, &na_s);
     } else if (s->ipv6 == _OI_SINVAL) {
-        *len = recvfrom(s->ipv4, buf, *len, 0, &na->raw, &na_s);
+        newlen = recvfrom(s->ipv4, buf, *len, 0, &na->raw, &na_s);
     } else {
         fd_set fset;
         FD_ZERO(&fset);
@@ -337,21 +331,19 @@ oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
         FD_SET(s->ipv6,&fset);
         select(s->ipv4>s->ipv6 ? s->ipv4 : s->ipv6, &fset, 0, 0, 0);
         if (FD_ISSET(s->ipv4,&fset)) {
-            *len = recvfrom(s->ipv4, buf, *len, 0, &na->raw, &na_s);
+            newlen = recvfrom(s->ipv4, buf, *len, 0, &na->raw, &na_s);
         } else {
-            *len = recvfrom(s->ipv6, buf, *len, 0, &na->raw, &na_s);
+            newlen = recvfrom(s->ipv6, buf, *len, 0, &na->raw, &na_s);
         }       
     } 
 #else
-    *len = recvfrom(s->ipv6, buf, *len, 0, &na->raw, &na_s);
+    newlen = recvfrom(s->ipv6, buf, *len, 0, &na->raw, &na_s);
 #if defined(OI_DUALSTACK)
     _OI_SUMAP(na);
 #endif
 #endif
-    if (*len < 0) {
-        *len = 0;
-        return -1;
-    } return 0;
+    *len = newlen<0 ? 0 : newlen;
+    return newlen<0;
 }
 
 #endif
