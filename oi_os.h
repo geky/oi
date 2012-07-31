@@ -7,10 +7,12 @@
 #   define OI_C
 #endif
 
-#if defined(__GNUC__)
-#   define OI_GCC
-#elif defined(_MSC_VER)
+#if defined(_MSC_VER)
 #   define OI_MSVC
+#elif defined(__clang__)
+#   define OI_CLANG
+#elif defined(__GNUC__)
+#   define OI_GCC
 #else
 #   warning oi does not recognize compiler
 #   define OI_UNKNOWN_CC

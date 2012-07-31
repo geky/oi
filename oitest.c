@@ -55,6 +55,8 @@ void testos() {
 
 #if defined(OI_MSVC)
     PRINT("compiler",TEST(1),"Visual Studio");
+#elif defined(OI_CLANG)
+    PRINT("compiler",TEST(1),"Clang");
 #elif defined(OI_GCC)
     PRINT("compiler",TEST(1),"GCC");
 #else
@@ -62,11 +64,11 @@ void testos() {
 #endif
     
 #if defined(OI_C)
-    PRINT("compiler",TEST(1),"C");
+    PRINT("language",TEST(1),"C");
 #elif defined(OI_CPP)
-    PRINT("compiler",TEST(1),"C++");
+    PRINT("language",TEST(1),"C++");
 #else
-    PRINT("compiler",TEST(0),"None");
+    PRINT("language",TEST(0),"None");
 #endif
 }
 

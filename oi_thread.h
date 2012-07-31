@@ -107,7 +107,7 @@ oi_call thread_sleep(unsigned int ms) {
     
     pthread_cond_destroy(&cond);
     pthread_mutex_destroy(&mutex);
-	return 0;
+    return 0;
 }
 
 oi_call thread_yield(void) {
