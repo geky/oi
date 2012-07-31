@@ -11,12 +11,11 @@
 #   define _OI_SINVAL INVALID_SOCKET
 #   define _OI_SCLOSE(sock) closesocket(sock)
 #   define _OI_SBLOCK(sock) {\
-        u_long blk = 1; \
+        u_long blk = 0; \
         if(ioctlsocket(sock,FIONBIO,&blk)) \
             _OI_SDIE(s,5); \
     } 
 #else
-#   include <fcntl.h>
 #   define _OI_SOCK signed int
 #   define _OI_SINVAL -1
 #   define _OI_SCLOSE(sock) close(sock)
@@ -219,34 +218,42 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
 
 
 oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
-    size_t na_s = na ? sizeof(address_t) : 0;
+    size_t na_s = sizeof(address_t);
+    address_t dump;
+    
 #if defined(OI_SINGLESTACK)    
     ns->ipv4 = _OI_SINVAL;
     ns->ipv6 = _OI_SINVAL;
     
     if (s->ipv4 == _OI_SINVAL) {
         if (listen(s->ipv6,5)) return 2;
-        ns->ipv6 = accept(s->ipv6,&na->raw,&na_s);
+        ns->ipv6 = accept(s->ipv6,na?&na->raw:&dump.raw,&na_s);
+        if (ns->ipv6 != _OI_SINVAL) _OI_NET_INIT;
         return ns->ipv6 == _OI_SINVAL;
+        
     } else if (s->ipv6 == _OI_SINVAL) {
         if (listen(s->ipv4,5)) return 2;
-        ns->ipv4 = accept(s->ipv4,&na->raw,&na_s);
+        ns->ipv4 = accept(s->ipv4,na?&na->raw:&dump.raw,&na_s);
+        if (ns->ipv4 != _OI_SINVAL) _OI_NET_INIT;
         return ns->ipv4 == _OI_SINVAL;      
+        
     } else {
         fd_set fset;
   
         if (listen(s->ipv4,5)) return 2;
-        if (listen(s->ipv4,5)) return 2;
+        if (listen(s->ipv6,5)) return 2;
 
         FD_ZERO(&fset);
         FD_SET(s->ipv4,&fset);
         FD_SET(s->ipv6,&fset);
         select(s->ipv4>s->ipv6 ? s->ipv4 : s->ipv6, &fset, 0, 0, 0);
         if (FD_ISSET(s->ipv4,&fset)) {
-            ns->ipv4 = accept(s->ipv4, &na->raw, &na_s);
+            ns->ipv4 = accept(s->ipv4, na?&na->raw:&dump.raw, &na_s);
+            if (ns->ipv4 != _OI_SINVAL) _OI_NET_INIT;
             return ns->ipv4 == _OI_SINVAL;
         } else {
-            ns->ipv6 = accept(s->ipv6, &na->raw, &na_s);
+            ns->ipv6 = accept(s->ipv6, na?&na->raw:&dump.raw, &na_s);
+            if (ns->ipv6 != _OI_SINVAL) _OI_NET_INIT;
             return ns->ipv6 == _OI_SINVAL;
         }       
     } 
@@ -254,7 +261,8 @@ oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
     ns->ipv6 = _OI_SINVAL;
     if (listen(s->ipv6,5)) return 2;
 
-    ns->ipv6 = accept(s->ipv6,&na->raw,&na_s);
+    ns->ipv6 = accept(s->ipv6,na?&na->raw:&dump.raw,&na_s);
+    if (ns->ipv6 != _OI_SINVAL) _OI_NET_INIT;
 #if defined(OI_DUALSTACK)
     _OI_SUMAP(na);
 #endif
@@ -318,12 +326,14 @@ oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
 
 oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
     int newlen;
-    size_t na_s = na ? sizeof(address_t) : 0;
+    size_t na_s = sizeof(address_t);
+    address_t dump;
+    
 #if defined(OI_SINGLESTACK)
     if (s->ipv4 == _OI_SINVAL) {
-        newlen = recvfrom(s->ipv6, buf, *len, 0, &na->raw, &na_s);
+        newlen = recvfrom(s->ipv6, buf, *len, 0, na?&na->raw:&dump.raw, &na_s);
     } else if (s->ipv6 == _OI_SINVAL) {
-        newlen = recvfrom(s->ipv4, buf, *len, 0, &na->raw, &na_s);
+        newlen = recvfrom(s->ipv4, buf, *len, 0, na?&na->raw:&dump.raw, &na_s);
     } else {
         fd_set fset;
         FD_ZERO(&fset);
@@ -331,13 +341,13 @@ oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
         FD_SET(s->ipv6,&fset);
         select(s->ipv4>s->ipv6 ? s->ipv4 : s->ipv6, &fset, 0, 0, 0);
         if (FD_ISSET(s->ipv4,&fset)) {
-            newlen = recvfrom(s->ipv4, buf, *len, 0, &na->raw, &na_s);
+            newlen = recvfrom(s->ipv4, buf, *len, 0, na?&na->raw:&dump.raw, &na_s);
         } else {
-            newlen = recvfrom(s->ipv6, buf, *len, 0, &na->raw, &na_s);
+            newlen = recvfrom(s->ipv6, buf, *len, 0, na?&na->raw:&dump.raw, &na_s);
         }       
     } 
 #else
-    newlen = recvfrom(s->ipv6, buf, *len, 0, &na->raw, &na_s);
+    newlen = recvfrom(s->ipv6, buf, *len, 0, na?&na->raw:dump, &na_s);
 #if defined(OI_DUALSTACK)
     _OI_SUMAP(na);
 #endif

@@ -599,7 +599,7 @@ void testsocket() {
     err = udp_send(&s1,msg,&len,&temp);
     PRINT("udp_send", TEST(!err), "client send  [%s] len %d err %d", msg, len, err);
     
-    err = udp_rec(&s1,msg,&len,&temp);
+    err = udp_rec(&s1,msg,&len,0);
     PRINT("udp_rec", TEST(!err && !strcmp(msg,"bye 1")), "client rec   [%s] len %d err %d", msg, len, err);
 
     strcpy(msg,"hello 2");

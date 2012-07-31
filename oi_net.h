@@ -17,7 +17,7 @@
 #   include <winsock2.h>
 #   include <ws2tcpip.h>
 #
-#   if _WIN32_WINNT >= 0x0600 && !defined(IPV6_V6ONLY)
+#   if WINVER >= 0x0600 && !defined(IPV6_V6ONLY)
 #       define IPV6_V6ONLY 27
 #   endif
 #
@@ -40,6 +40,7 @@
 #   include <sys/types.h>
 #   include <sys/socket.h>
 #   include <netdb.h>
+#   include <fcntl.h>
 #
 #   define _OI_NET_INIT
 #   define _OI_NET_DEINIT
