@@ -13,6 +13,21 @@
 #   define _OI_AFAMILY AF_UNSPEC
 #endif
 
+#ifdef OI_WIN
+#define _OI_RGAI {_OI_NET_DEINIT; return err;}
+#else
+#define _OI_RGAI { \
+        _OI_NET_DEINIT; \
+        switch(err) { \
+            case 0:             return 0; \
+            case EAI_MEMORY:    return ENOMEM; \
+            case EAI_AGAIN:     return EAGAIN; \
+            case EAI_BADFLAGS:  return EINVAL; \
+            case EAI_SYSTEM:    return errno; \
+            default:            return err; \
+    }   }
+#endif
+
 typedef union {
     unsigned short family;
     struct sockaddr raw;
@@ -45,7 +60,7 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     hint.ai_family = _OI_AFAMILY;
     if (!lookup) hint.ai_flags = AI_NUMERICHOST;
     
-    if ((err = getaddrinfo(s,0,&hint,&res))) return err;
+    if ((err = getaddrinfo(s,0,&hint,&res))) _OI_RGAI;
     memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
@@ -65,7 +80,7 @@ oi_call address_all_from_name(address_t * a, size_t * len, const char * s, uint1
     hint.ai_socktype = SOCK_STREAM;
     if (!lookup) hint.ai_flags = AI_NUMERICHOST;
     
-    if ((err = getaddrinfo(s,0,&hint,&res))) return err;
+    if ((err = getaddrinfo(s,0,&hint,&res))) _OI_RGAI;
     for (hit = res; t < *len && hit; t++, hit = hit->ai_next) { 
         memcpy(&a[t],hit->ai_addr,hit->ai_addrlen);
         a[t].ipv4.sin_port = htons(port);
@@ -85,7 +100,7 @@ oi_call address_loopback(address_t * a, uint16 port) {
     memset(&hint,0,sizeof hint);
     hint.ai_family =_OI_AFAMILY;
     
-    if ((err = getaddrinfo("localhost",0,&hint,&res))) return err;
+    if ((err = getaddrinfo("localhost",0,&hint,&res))) _OI_RGAI;
     memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
@@ -100,11 +115,11 @@ oi_call address_host(address_t * a, uint16 port) {
     int err;
     _OI_NET_INIT;
 
-    if (gethostname(name,sizeof name)) return _OI_NET_ERR;
+    if (gethostname(name,sizeof name)) {_OI_NET_DEINIT; return _OI_NET_ERR;}
     memset(&hint,0,sizeof hint);
     hint.ai_family = _OI_AFAMILY;
 
-    if ((err = getaddrinfo(name,0,&hint,&res))) return err;
+    if ((err = getaddrinfo(name,0,&hint,&res))) _OI_RGAI;
     memcpy(a,res->ai_addr,res->ai_addrlen);
     a->ipv4.sin_port = htons(port);
     
@@ -118,7 +133,7 @@ oi_call address_name(address_t * a, char * s, size_t len, int lookup) {
     _OI_NET_INIT;
     err = getnameinfo(&a->raw,sizeof(address_t),s,len,0,0,lookup?0:NI_NUMERICHOST);
     _OI_NET_DEINIT;
-    return err;
+    _OI_RGAI;
 }
 
 oi_func void * address_address(address_t * a, size_t * len) {

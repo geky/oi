@@ -337,7 +337,7 @@ void testcondthread(void * timed) {
 
     mutex_lock(condpm);
     while (1) {
-		err = timed ? cond_timed_wait(condpc,condpm,100) : cond_wait(condpc,condpm);
+        err = timed ? cond_timed_wait(condpc,condpm,100) : cond_wait(condpc,condpm);
         if (condcount < 0) break;
         PRINT(timed ? "timed_wait" : "wait", TEST(!err), "woken thread err %d", err);
         condcount++;
@@ -528,13 +528,16 @@ void testudpthread(void * s) {
     err = udp_send((socket_t*)s,msg,&len,&a);
     PRINT("udp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
     
-    err = udp_rec((socket_t*)s,msg,&len,&a);
-    PRINT("udp_rec", TEST(!err && !strcmp(msg,"hello 2")), "server rec   [%s] len %d err %d", msg, len, err);
+    err = udp_timed_rec((socket_t*)s,msg,&len,&a,100);
+    PRINT("udp_rec", TEST(!err && !strcmp(msg,"hello 2")), "svr timed rec [%s] len %d err %d", msg, len, err);
     
     strcpy(msg,"bye 2");
     len = 10;
     err = udp_send((socket_t*)s,msg,&len,&a);
     PRINT("udp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
+
+    err = udp_timed_rec((socket_t*)s,msg,&len,&a,100);
+    PRINT("udp_rec", TEST(err && len==0), "server timed rec len %d err %d", len, err);
 }
 
 void testtcpthread(void * s) {
@@ -560,20 +563,26 @@ void testtcpthread(void * s) {
     PRINT("destroy", TEST(!err), "destroying server connection err %d", err);
     
 
-    err = tcp_accept((socket_t*)s,&ns,&a);
+    err = tcp_timed_accept((socket_t*)s,&ns,&a,100);
     address_name(&a,msg,len,0);
-    PRINT("tcp_accept", TEST(!err), "server accept %s:%d err %d", msg, address_port(&a), err);
+    PRINT("tcp_accept", TEST(!err), "server time accept %s:%d err %d", msg, address_port(&a), err);
     
-    err = tcp_rec(&ns,msg,&len);
-    PRINT("tcp_rec", TEST(!err && !strcmp(msg,"hello 2")), "server rec   [%s] len %d err %d", msg, len, err);
+    err = tcp_timed_rec(&ns,msg,&len,100);
+    PRINT("tcp_rec", TEST(!err && !strcmp(msg,"hello 2")), "srv time rec [%s] len %d err %d", msg, len, err);
 
     strcpy(msg,"bye 2");
     len = 10;
     err = tcp_send(&ns,msg,&len);
     PRINT("tcp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
     
+    err = tcp_timed_rec(&ns,msg,&len,100);
+    PRINT("tcp_rec", TEST(err && len==0), "server timed rec len %d err %d", len, err);
+
     err = socket_destroy(&ns);
     PRINT("destroy", TEST(!err), "destroying connection err %d", err);
+
+    err = tcp_timed_accept((socket_t*)s,&ns,&a,100);
+    PRINT("tcp_accept", TEST(err), "server timed accept err %d", err);
 }
 
 void testsocket() {
@@ -612,11 +621,11 @@ void testsocket() {
 
     err = udp_rec(&s2,msg,&len,0);
     PRINT("udp_rec", TEST(!err && !strcmp(msg,"bye 2")), "client rec   [%s] len %d err %d", msg, len, err);
-    printf("\n");
 
    
     thread_join(&tt);
     thread_destroy(&tt);
+    printf("\n");
 
     err = socket_destroy(&s0) |
           socket_destroy(&s1) |
@@ -661,13 +670,12 @@ void testsocket() {
    
     err = tcp_rec(&s2,msg,&len);
     PRINT("tcp_rec", TEST(!err && !strcmp(msg,"bye 2")), "client rec   [%s] len %d err %d", msg, len, err);
-    printf("\n");
 
 
     thread_join(&tt);
     thread_destroy(&tt);
-
-
+    printf("\n");
+    
     err = socket_destroy(&s0) |
           socket_destroy(&s1) |
           socket_destroy(&s2);
