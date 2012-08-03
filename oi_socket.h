@@ -177,8 +177,7 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
 }
 
 oi_call socket_destroy(socket_t * s) {
-    int iserr;
-    iserr = 
+    int iserr = 
 #if defined(OI_SINGLESTACK)
         (s->ipv4 != _OI_SINVAL && _OI_SCLOSE(s->ipv4)) |
 #endif
