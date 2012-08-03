@@ -132,7 +132,6 @@ oi_call address_name(address_t * a, char * s, size_t len, int lookup) {
     int err;
     _OI_NET_INIT;
     err = getnameinfo(&a->raw,sizeof(address_t),s,len,0,0,lookup?0:NI_NUMERICHOST);
-    _OI_NET_DEINIT;
     _OI_RGAI;
 }
 

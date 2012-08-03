@@ -23,12 +23,12 @@
 #
 #   //yes, the return in the macro is intentional
 #   define _OI_NET_INIT {                       \
-        WSADATA wsadata;                        \
-        if(WSAStartup(MAKEWORD(2,2),&wsadata))  \
-            return 6; }
+        WSADATA wsadata; int err; \
+        if((err = WSAStartup(MAKEWORD(2,2),&wsadata)))  \
+            return err; }
 
 #   define _OI_NET_DEINIT                       \
-        if (WSACleanup()) return 5;
+        if (WSACleanup()) return WSAGetLastError();
 
 #   define _OI_NET_ERR WSAGetLastError()
 #
