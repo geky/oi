@@ -26,7 +26,7 @@ oi_call rwlock_read_lock(rwlock_t * rw) {
 }
 
 oi_call rwlock_try_read_lock(rwlock_t * rw) {
-    return !TryAcquireSRWLockShared(rw);
+    return TryAcquireSRWLockShared(rw) ? 0 : ERROR_BUSY;
 }
 
 oi_call rwlock_read_unlock(rwlock_t * rw) {
@@ -40,7 +40,7 @@ oi_call rwlock_write_lock(rwlock_t * rw) {
 }
 
 oi_call rwlock_try_write_lock(rwlock_t * rw) {
-    return !TryAcquireSRWLockExclusive(rw);
+    return TryAcquireSRWLockExclusive(rw) ? 0 : ERROR_BUSY;
 }
 
 oi_call rwlock_write_unlock(rwlock_t * rw) {
@@ -62,13 +62,13 @@ oi_call rwlock_create(rwlock_t * rw) {
     InitializeCriticalSection(&rw->count_lock);
     InitializeCriticalSection(&rw->write_lock);
     rw->count_event = CreateEvent(0,1,1,0);
-    return !rw->count_event;
+    return rw->count_event ? 0 : GetLastError();
 }
 
 oi_call rwlock_destroy(rwlock_t * rw) {
     DeleteCriticalSection(&rw->count_lock);
     DeleteCriticalSection(&rw->write_lock);
-    return !CloseHandle(rw->count_event);
+    return CloseHandle(rw->count_event) ? 0 : GetLastError();
 }
 
 oi_call rwlock_read_lock(rwlock_t * rw) {
@@ -82,7 +82,7 @@ oi_call rwlock_read_lock(rwlock_t * rw) {
 
 oi_call rwlock_try_read_lock(rwlock_t * rw) {
     if (!TryEnterCriticalSection(&rw->write_lock)) 
-        return 1;
+        return ERROR_BUSY;
     EnterCriticalSection(&rw->count_lock);
     if (!rw->count++) ResetEvent(rw->count_event);
     LeaveCriticalSection(&rw->count_lock);
@@ -115,7 +115,7 @@ oi_call rwlock_try_write_lock(rwlock_t * rw) {
     if (rw->count) {
         LeaveCriticalSection(&rw->count_lock);
         LeaveCriticalSection(&rw->write_lock);
-        return 2;
+        return ERROR_BUSY;
     } else {
         LeaveCriticalSection(&rw->count_lock);
         return 0;

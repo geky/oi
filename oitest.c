@@ -45,8 +45,8 @@ void testos() {
     PRINT("system",TEST(1),"Linux");
 #elif defined(OI_MAC)
     PRINT("system",TEST(1),"Macintosh");
-#elif defined(OI_FreeBSD)
-    PRINT("system",TEST(1),"FreeBSD");
+#elif defined(OI_BSD)
+    PRINT("system",TEST(1),"BSD");
 #elif defined(OI_UNKOWN_OS)
     PRINT("system",TEST(0),"Unknown");
 #else

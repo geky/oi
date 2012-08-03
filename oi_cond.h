@@ -20,11 +20,11 @@ oi_call cond_destroy(cond_t * c) {
 }
 
 oi_call cond_wait(cond_t * c, mutex_t * m) {
-    return !SleepConditionVariableCS(c,m,INFINITE);
+    return SleepConditionVariableCS(c,m,INFINITE) ? GetLastError() : 0;
 }
 
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
-    return !SleepConditionVariableCS(c,m,ms);
+    return SleepConditionVariableCS(c,m,ms) ? GetLastError() : 0;
 }
 
 oi_call cond_signal_one(cond_t * c) {
@@ -52,12 +52,12 @@ oi_call cond_create(cond_t * c) {
     c->unlocking = 0;
     c->event = CreateEvent(0,1,1,0);
     InitializeCriticalSection(&c->lock);
-    return 0;
+    return c->event ? 0 : GetLastError();
 }
 
 oi_call cond_destroy(cond_t * c) {
     DeleteCriticalSection(&c->lock);
-    return !CloseHandle(c->event);
+    return CloseHandle(c->event) ? 0 : GetLastError();
 }
 
 oi_call cond_wait(cond_t * c, mutex_t * m) {
@@ -96,7 +96,7 @@ oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
             c->count--;
             LeaveCriticalSection(&c->lock);
             EnterCriticalSection(m);
-            return 1;
+            return ERROR_TIMEOUT;
         }
 
     

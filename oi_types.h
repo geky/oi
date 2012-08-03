@@ -1,18 +1,7 @@
 #ifndef OI_TYPES
 #define OI_TYPES 1
 #include "oi_os.h"
-
 #include <math.h>
-
-
-#ifndef OI_MSVC
-#define oi_func static inline
-#else
-#define oi_func static __inline
-#endif
-
-#define oi_call oi_func int
-
 
 #if defined(OI_MSVC)
 typedef signed char        int8;
@@ -44,7 +33,6 @@ typedef signed long long   int64;
 typedef unsigned long long uint64;
 #endif
 
-
 typedef float float32;
 typedef double float64;
 
@@ -61,6 +49,5 @@ typedef double float64;
 #ifndef NAN
 #define NAN (0.0/0.0)
 #endif
-
 
 #endif

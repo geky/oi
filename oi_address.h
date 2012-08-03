@@ -23,9 +23,11 @@
             case EAI_MEMORY:    return ENOMEM; \
             case EAI_AGAIN:     return EAGAIN; \
             case EAI_BADFLAGS:  return EINVAL; \
+            case EAI_OVERFLOW:  return ENAMETOOLONG; \
             case EAI_SYSTEM:    return errno; \
             default:            return err; \
-    }   }
+        } \
+    }
 #endif
 
 typedef union {

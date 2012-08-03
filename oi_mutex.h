@@ -24,7 +24,7 @@ oi_call mutex_lock(mutex_t * m) {
 }
 
 oi_call mutex_try_lock(mutex_t * m) {
-    return !TryEnterCriticalSection(m);
+    return TryEnterCriticalSection(m) ? 0 : ERROR_BUSY;
 }
 
 oi_call mutex_unlock(mutex_t * m) {
