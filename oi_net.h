@@ -30,7 +30,7 @@
 #   define _OI_NET_DEINIT                       \
         if (WSACleanup()) return WSAGetLastError();
 
-#   define _OI_NET_ERR (WSAGetLastError()==WSAETIMEDOUT ? ERROR_TIMEOUT : WSAGetLastError())
+#   define _OI_NET_ERR WSAGetLastError()
 #
 #else
 #

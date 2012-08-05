@@ -648,6 +648,7 @@ void testsocket() {
 
     thread_create(&tt,&testtcpthread,&s0);
 
+
     address_loopback(&temp,12345);
     err = tcp_connect(&s1,&temp);
     PRINT("tcp_connec", TEST(!err), "client connect err %d", err);
@@ -674,7 +675,6 @@ void testsocket() {
     err = tcp_rec(&s2,msg,&len);
     PRINT("tcp_rec", TEST(!err && !strcmp(msg,"bye 2")), "client rec   [%s] len %d err %d", msg, len, err);
 
-
     thread_join(&tt);
     printf("\n");
     
@@ -682,6 +682,17 @@ void testsocket() {
           socket_destroy(&s1) |
           socket_destroy(&s2);
     PRINT("destroy", TEST(!err), "destroying sockets err %d", err);
+    
+    err = socket_create(&s0,SOCKET_TCP,0);
+    PRINT("create", TEST(!err), "creating tcp socket on any err %d", err);
+    
+    address_loopback(&temp,12345);
+    err = tcp_timed_connect(&s0,&temp,100);
+    PRINT("tcp_connec", TEST(err==ERR_REFUSED), "client timed connect err %d", err);
+    
+    address_from_name(&temp,"1.1.1.1",12345,0);
+    err = tcp_timed_connect(&s0,&temp,100);
+    PRINT("tcp_connec", TEST(err==ERR_TIMEOUT), "client timed connect err %d", err);
 }
 
 #define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf(TXTY"\noi_"#file" :\n"TXTN); test##file();}
