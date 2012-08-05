@@ -7,26 +7,32 @@
 
 
 #ifdef OI_WIN
+typedef SOCKET _oi_sock;
 #   define _OI_SERR_NOS WSAEAFNOSUPPORT
 #   define _OI_SERR_TIME ERROR_TIMEOUT
-#   define _OI_CON_ERR (_OI_NET_ERR==WSATIMEDOUT ? _OI_SERR_TIME : _OI_NET_ERR)
-#   define _OI_SOCK SOCKET
 #   define _OI_SINVAL INVALID_SOCKET
 #   define _OI_SCLOSE(sock) closesocket(sock)
-#   define _OI_SBLOCK(sock) {\
+#   define _OI_SBLOCK(sock) { \
         u_long blk = 0; \
-        if(ioctlsocket(sock,FIONBIO,&blk)) \
+        if (ioctlsocket(sock,FIONBIO,&blk)) \
             _OI_SDIE(s); \
     } 
+#   define _OI_SUNBLOCK(sock) { \
+        u_long blk = 1; \
+        if (ioctlsocket(sock,FIONBIO,&blk)) \
+            _OI_SDIE(s); \
+    }
 #else
+typedef signed int _oi_sock;
 #   define _OI_SERR_NOS EAFNOSUPPORT
 #   define _OI_SERR_TIME ETIMEDOUT
-#   define _OI_CON_ERR _OI_NET_ERR
-#   define _OI_SOCK signed int
 #   define _OI_SINVAL -1
 #   define _OI_SCLOSE(sock) close(sock)
 #   define _OI_SBLOCK(sock) \
         if (fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)&~O_NONBLOCK)) \
+            _OI_SDIE(s);
+#   define _OI_SUNBLOCK(sock) \
+        if (fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)|O_NONBLOCK)) \
             _OI_SDIE(s);
 #endif
 
@@ -66,13 +72,13 @@ enum {
 
 #ifdef OI_SINGLESTACK
 typedef struct {
-    _OI_SOCK ipv6;
-    _OI_SOCK ipv4;
+    _oi_sock ipv6;
+    _oi_sock ipv4;
 } socket_t;
 #else
 typedef union {
-    _OI_SOCK ipv6;
-    _OI_SOCK ipv4;
+    _oi_sock ipv6;
+    _oi_sock ipv4;
 } socket_t;
 #endif
 
@@ -183,46 +189,49 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
 }
 
 oi_call socket_destroy(socket_t * s) {
-    int iserr = 
+    int iserr = 0;
 #if defined(OI_SINGLESTACK)
-        (s->ipv4 != _OI_SINVAL && _OI_SCLOSE(s->ipv4)) |
+    if (s->ipv4 != _OI_SINVAL) {
+        iserr |= _OI_SCLOSE(s->ipv4);
+        s->ipv4 = _OI_SINVAL;
+    }
 #endif
-        (s->ipv6 != _OI_SINVAL && _OI_SCLOSE(s->ipv6));
+    if (s->ipv6 != _OI_SINVAL) {
+        iserr |= _OI_SCLOSE(s->ipv6);
+        s->ipv6 = _OI_SINVAL;
+    }
     _OI_NET_DEINIT;
     return iserr ? _OI_NET_ERR : 0;
 }
 
-//TODO make tcp_timed_connect
 oi_call tcp_connect(socket_t * s, address_t * a) {
     if (a->family == AF_INET) {
-#if defined(OI_IPV4)
-        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) return _OI_CON_ERR;
-        return 0;
-#elif defined(OI_SINGLESTACK)
-        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) return _OI_CON_ERR;
+#if defined(OI_IPV4) || defined(OI_SINGLESTACK)
+        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(s);
+#if defined(OI_SINGLESTACK)
         if (s->ipv6 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv6);
             s->ipv6 = _OI_SINVAL;
         }
+#endif
         return 0;
 #elif defined(OI_DUALSTACK)
         address_t map;
         _OI_SMAP(a,map)
-        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) return _OI_CON_ERR;
+        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) _OI_SDIE(s);
         return 0;
 #else
         return _OI_SERR_NOS;
 #endif
     } else {
-#if defined(OI_IPV6) || defined(OI_DUALSTACK)
-        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) return _OI_CON_ERR;
-        return 0;
-#elif defined(OI_SINGLESTACK)
-        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) return _OI_CON_ERR;
+#if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
+        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) _OI_SDIE(s);
+#if defined(OI_SINGLESTACK)
         if (s->ipv4 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv4);
             s->ipv4 = _OI_SINVAL;
         }
+#endif
         return 0;
 #else
         return _OI_SERR_NOS;
@@ -230,6 +239,65 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
     }
 }
 
+oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
+    fd_set fset;
+    struct timeval time;
+    int err;
+    _oi_sock sock;
+
+    FD_ZERO(&fset);
+    time.tv_usec = (ms%1000)*1000;
+    time.tv_sec = (ms/1000);
+
+    if (a->family == AF_INET) {
+#if defined(OI_IPV4) || defined(OI_SINGLESTACK)
+        _OI_SUNBLOCK(s->ipv4);
+        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(s);
+        sock = s->ipv4;
+#if defined(OI_SINGLESTACK)
+        if (s->ipv6 != _OI_SINVAL) {
+            _OI_SCLOSE(s->ipv6);
+            s->ipv6 = _OI_SINVAL;
+        }
+#endif
+#elif defined(OI_DUALSTACK)
+        address_t map;
+        _OI_SMAP(a,map);
+        _OI_SUNBLOCK(s->ipv6);
+        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) _OI_SDIE(s);
+        sock = s->ipv6;
+#else
+        return _OI_SERR_NOS;
+#endif
+    } else {
+#if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
+        _OI_SUNBLOCK(s->ipv6);
+        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) _OI_SDIE(s);
+        sock = s->ipv6;
+#if defined(OI_SINGLESTACK)
+        if (s->ipv4 != _OI_SINVAL) {
+            _OI_SCLOSE(s->ipv4);
+            s->ipv4 = _OI_SINVAL;
+        }
+#endif
+#else
+        return _OI_SERR_NOS;
+#endif
+    }
+    
+    FD_SET(sock,&fset);
+    err = select(sock+1, 0, &fset, 0, &time);
+    
+    if (err == 0) {
+        socket_destroy(s);
+        return _OI_SERR_TIME;
+    } else if (err < 0) {
+        _OI_SDIE(s);
+    } else {
+        _OI_SBLOCK(sock);
+        return 0;
+    }
+}
 
 oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
     size_t na_s = sizeof(address_t);
@@ -301,7 +369,7 @@ oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned i
     fd_set fset;
     struct timeval time;
     int err;
-    _OI_SOCK max;
+    _oi_sock max;
 
     FD_ZERO(&fset);
     time.tv_usec = (ms%1000)*1000;
@@ -395,7 +463,7 @@ oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
     fd_set fset;
     struct timeval time;
     int err;
-    _OI_SOCK sock;
+    _oi_sock sock;
 
     *len = 0;
     FD_ZERO(&fset);
@@ -424,6 +492,7 @@ oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
 oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
     int newlen = *len;
     *len = 0;
+
     if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
         newlen = sendto(s->ipv4, buf, newlen, 0, &a->raw, sizeof a->ipv4);
@@ -491,7 +560,7 @@ oi_call udp_timed_rec(socket_t * s, void * buf, size_t * len, address_t * na, un
     fd_set fset;
     struct timeval time;
     int err;
-    _OI_SOCK max;
+    _oi_sock max;
 
     *len = 0;
     FD_ZERO(&fset);

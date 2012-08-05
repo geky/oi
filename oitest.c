@@ -75,12 +75,16 @@ void testos() {
 #define __USE_GNU
 #include "oi_err.h"
 void testerr() {
-    PRINT("error", "\n", "0             -> \"%s\"", get_error(0));
-    PRINT("", "\n", "ERR_IN_USE    -> \"%s\"", get_error(ERR_IN_USE));
-    PRINT("", "\n", "ERR_TIMEOUT   -> \"%s\"", get_error(ERR_TIMEOUT));
-    PRINT("", "\n", "ERR_NOT_FOUND -> \"%s\"", get_error(ERR_NOT_FOUND));
-    PRINT("", "\n", "ERR_NO_DATA   -> \"%s\"", get_error(ERR_NO_DATA));
-    PRINT("", "\n", "ERR_TAKEN     -> \"%s\"", get_error(ERR_TAKEN));
+    PRINT("error", "\n", "0                    -> %s", get_error(0));
+    PRINT("", "\n", "ERR_IN_USE           -> %s", get_error(ERR_IN_USE));
+    PRINT("", "\n", "ERR_TIMEOUT          -> %s", get_error(ERR_TIMEOUT));
+    PRINT("", "\n", "ERR_NOT_FOUND        -> %s", get_error(ERR_NOT_FOUND));
+    PRINT("", "\n", "ERR_NO_DATA          -> %s", get_error(ERR_NO_DATA));
+    PRINT("", "\n", "ERR_TAKEN            -> %s", get_error(ERR_TAKEN));
+    PRINT("", "\n", "ERR_REFUSED          -> %s", get_error(ERR_REFUSED));
+    PRINT("", "\n", "ERR_UNREACHABLE_HOST -> %s", get_error(ERR_UNREACHABLE_HOST));
+    PRINT("", "\n", "ERR_UNREACHABLE_NET  -> %s", get_error(ERR_UNREACHABLE_NET));
+    PRINT("", "\n", "ERR_DISCONNECTED     -> %s", get_error(ERR_DISCONNECTED));
 }
 
 #include "oi_types.h"
@@ -658,8 +662,8 @@ void testsocket() {
     PRINT("tcp_rec", TEST(!err && !strcmp(msg,"bye 1")), "client rec   [%s] len %d err %d", msg, len, err);
 
     address_loopback(&temp,12345);
-    err = tcp_connect(&s2,&temp);
-    PRINT("tcp_connec", TEST(!err), "client connect err %d", err);
+    err = tcp_timed_connect(&s2,&temp,100);
+    PRINT("tcp_connec", TEST(!err), "client timed connect err %d", err);
 
     strcpy(msg,"hello 2");
     len = 10;

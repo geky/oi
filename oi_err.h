@@ -1,17 +1,14 @@
 #ifndef OI_ERR
 #define OI_ERR 1
 #include "oi_os.h"
-#include <netdb.h>
 
 
 #ifdef OI_WIN
 enum {
     ERR_IN_USE              = ERROR_BUSY        ,
     ERR_TIMEOUT             = ERROR_TIMEOUT     ,
-
     ERR_NOT_FOUND           = WSAHOST_NOT_FOUND ,
     ERR_NO_DATA             = WSANO_DATA        ,
-
     ERR_REFUSED             = WSAECONNREFUSED   ,
     ERR_UNREACHABLE_HOST    = WSAEHOSTUNREACH   ,
     ERR_UNREACHABLE_NET     = WSAENETUNREACH    ,
@@ -47,10 +44,8 @@ oi_func const char * get_error(int err) {
 enum {
     ERR_IN_USE              = EBUSY             ,
     ERR_TIMEOUT             = ETIMEDOUT         ,
-
     ERR_NOT_FOUND           = EAI_NONAME        ,
     ERR_NO_DATA             = EAI_NODATA        ,
-
     ERR_TAKEN               = EADDRINUSE        ,
     ERR_REFUSED             = ECONNREFUSED      ,
     ERR_UNREACHABLE_HOST    = EHOSTUNREACH      ,

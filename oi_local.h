@@ -10,7 +10,7 @@ typedef DWORD local_t;
 
 oi_call local_create(local_t * i) {
     *i = TlsAlloc();
-    return i==TLS_OUT_OF_INDEXES ? -EINVAL : 0;
+    return i==TLS_OUT_OF_INDEXES ? GetLastError() : 0;
 }
 
 oi_call local_destroy(local_t * i) {
