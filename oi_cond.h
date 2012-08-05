@@ -89,7 +89,7 @@ oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     LeaveCriticalSection(&c->lock);
     LeaveCriticalSection(m);
 
-    while(1) {
+    while (1) {
         Sleep(0); //give other threads a chance to consume signal
         if (WaitForSingleObject(c->event,ms) == WAIT_TIMEOUT) {
             EnterCriticalSection(&c->lock);

@@ -24,15 +24,7 @@ oi_call thread_create(thread_t * t, void (*r)(void*), void * a) {
     t->func = r;
     t->data = a;
     t->i = (HANDLE)_beginthreadex(0,0,&_oi_thread_handler,t,0,0);
-    return !t->i;
-}
-
-oi_call thread_destroy(thread_t * t) {
-    return !CloseHandle(t->i);
-}
-
-oi_call thread_join(thread_t * t)  {
-    return WaitForSingleObject(t->i,INFINITE) != WAIT_OBJECT_0;
+    return t->i ? 0 : -errno;
 }
 
 oi_call thread_sleep(unsigned int ms) {
@@ -45,8 +37,19 @@ oi_call thread_yield(void) {
     return 0;
 }
 
+oi_call thread_join(thread_t * t)  {
+    int err = WaitForSingleObject(t->i,INFINITE);
+
+    if (err == WAIT_OBJECT_0)
+        return CloseHandle(t->i) ? 0 : GetLastError();
+    else if (err == WAIT_FAILED)
+        return GetLastError();
+    else
+        return err;
+}
+
 oi_call thread_terminate(thread_t * t) {
-    return !TerminateThread(t->i, 0);
+    return (TerminateThread(t->i, 0) && CloseHandle(t->i)) ? 0 : GetLastError();
 }
 
 #else
@@ -72,14 +75,6 @@ oi_call thread_create(thread_t * t, void (*r)(void*), void * a) {
     t->func = r;
     t->data = a;
     return pthread_create(&t->i,0,&_oi_thread_handler,t);
-}
-
-oi_call thread_destroy(thread_t * t) {
-    return 0;
-}
-
-oi_call thread_join(thread_t * t) {
-    return pthread_join(t->i,0);
 }
 
 oi_call thread_sleep(unsigned int ms) {
@@ -112,6 +107,10 @@ oi_call thread_sleep(unsigned int ms) {
 
 oi_call thread_yield(void) {
     return sched_yield() ? errno : 0;
+}
+
+oi_call thread_join(thread_t * t) {
+    return pthread_join(t->i,0);
 }
 
 oi_call thread_terminate(thread_t * t) {

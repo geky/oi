@@ -72,8 +72,19 @@ void testos() {
 #endif
 }
 
+#define __USE_GNU
+#include "oi_err.h"
+void testerr() {
+    PRINT("error", "\n", "0             -> \"%s\"", get_error(0));
+    PRINT("", "\n", "ERR_IN_USE    -> \"%s\"", get_error(ERR_IN_USE));
+    PRINT("", "\n", "ERR_TIMEOUT   -> \"%s\"", get_error(ERR_TIMEOUT));
+    PRINT("", "\n", "ERR_NOT_FOUND -> \"%s\"", get_error(ERR_NOT_FOUND));
+    PRINT("", "\n", "ERR_NO_DATA   -> \"%s\"", get_error(ERR_NO_DATA));
+    PRINT("", "\n", "ERR_TAKEN     -> \"%s\"", get_error(ERR_TAKEN));
+}
+
 #include "oi_types.h"
-void testtypes(void) {
+void testtypes() {
     uint8  ui8  = (uint8 )-1;
     uint16 ui16 = (uint16)-1;
     uint32 ui32 = (uint32)-1;
@@ -181,10 +192,6 @@ void testthread() {
     err = thread_join(&t2);
     PRINT("join", TEST(!err), "joining thread %d err %d", 2, err);
     PRINT("", TEST(1), "main thread joined");
-    err = thread_destroy(&t1);
-    PRINT("destroy", TEST(!err), "destroying thread %d err %d", 1, err);
-    err = thread_destroy(&t2);
-    PRINT("", TEST(!err), "destroying thread %d err %d", 2, err);
 }
 
 
@@ -215,7 +222,6 @@ void testlocal() {
     
     thread_create(&t,&testlocalthread,&l);
     thread_join(&t);
-    thread_destroy(&t);
     
     temp = (int)local_get(&l);
     PRINT("get", TEST(temp == 1), "thread 1 value is %d", temp);
@@ -231,7 +237,7 @@ void testmutexthread(void * p) {
     int err;
     
     err = mutex_try_lock(mp);
-    PRINT("try_lock", TEST(err), "thread 2 trying mutex err %d", err);
+    PRINT("try_lock", TEST(err == ERR_IN_USE), "thread 2 trying mutex err %d", err);
     err = mutex_lock(mp);
     PRINT("lock", TEST(!err), "thread 2 locking mutex err %d", err);
     
@@ -269,9 +275,8 @@ void testmutex() {
     PRINT("unlock", TEST(!err), "unlocking mutex err %d", err);
     
     thread_join(&t);
-    thread_destroy(&t);
     err = mutex_destroy(&m);
-    PRINT("delete", TEST(!err), "destroying mutex err %d", err);
+    PRINT("destroy", TEST(!err), "destroying mutex err %d", err);
 }
 
 
@@ -282,7 +287,7 @@ void testrwlockthread(void * d) {
     int err;
 
     err = rwlock_try_read_lock(prw);
-    PRINT("try_read", TEST(err), "read thread trying lock err %d", err);
+    PRINT("try_read", TEST(err == ERR_IN_USE), "read thread trying lock err %d", err);
     err = rwlock_read_lock(prw);
     PRINT("read_lock", TEST(!err), "read thread locking err %d", err);
     thread_sleep(100); printf("\n");
@@ -312,7 +317,7 @@ void testrwlock() {
     thread_sleep(50); printf("\n");
 
     err = rwlock_try_write_lock(&rw);
-    PRINT("try_write", TEST(err), "write thread trying lock err %d", err);
+    PRINT("try_write", TEST(err == ERR_IN_USE), "write thread trying lock err %d", err);
     err = rwlock_write_lock(&rw);
     PRINT("write_lock", TEST(!err), "write thread locking err %d", err);
     err = rwlock_write_unlock(&rw);
@@ -320,9 +325,7 @@ void testrwlock() {
     
     thread_join(&t1);
     thread_join(&t2);
-    thread_destroy(&t1);
-    thread_destroy(&t2);
-    
+        
     err = rwlock_destroy(&rw);
     PRINT("destroy", TEST(!err), "destroying rwlock err %d", err);
 }
@@ -344,7 +347,7 @@ void testcondthread(void * timed) {
         PRINT("", TEST(condcount <= condmax), "total signals = %d", condcount);
     }
     
-    PRINT("", TEST(!err ^ (int)timed), "woken thread err %d", err);
+    PRINT("", TEST((int)timed?err==ERR_TIMEOUT:!err), "woken thread err %d", err);
     mutex_unlock(condpm);
 }
 
@@ -358,7 +361,7 @@ void testcond() {
     mutex_create(&m);
     condpm = &m;
     err = cond_create(&c);
-	condpc = &c;
+    condpc = &c;
     PRINT("create", TEST(!err), "creating cond err %d", err);
 
     thread_create(&t1,&testcondthread,(void*)0);
@@ -389,14 +392,11 @@ void testcond() {
     mutex_unlock(&m);
 
     thread_join(&t2);
-    thread_destroy(&t2);
     thread_join(&t3);
-    thread_destroy(&t3);
-
+    
     err = cond_signal_all(&c);
     PRINT("", TEST(!err), "terminating and signalling err %d", err);
-	thread_join(&t1);
-	thread_destroy(&t1);
+    thread_join(&t1);
 
     err = cond_destroy(&c);
     PRINT("destroy", TEST(!err), "destroying cond err %d", err);
@@ -409,11 +409,11 @@ void testtime() {
     
     b=millis();
     PRINT("millis", "\n", "before -> %llu", b);
-	err=thread_sleep(1500);
+    err=thread_sleep(1500);
     PRINT("sleep", TEST(!err), "thread_sleep(1500) err %d", err);
-	err=thread_sleep(1000);
+    err=thread_sleep(1000);
     PRINT("", TEST(!err), "thread_sleep(1000) err %d", err);
-	err=thread_sleep(500);
+    err=thread_sleep(500);
     PRINT("", TEST(!err), "thread_sleep(500)  err %d", err);
     a = millis();
     PRINT("", TEST((a-b)/100 == 30), "after  -> %llu  diff = %llu", a, a-b);    
@@ -529,7 +529,7 @@ void testudpthread(void * s) {
     PRINT("udp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
     
     err = udp_timed_rec((socket_t*)s,msg,&len,&a,100);
-    PRINT("udp_rec", TEST(!err && !strcmp(msg,"hello 2")), "svr timed rec [%s] len %d err %d", msg, len, err);
+    PRINT("udp_rec", TEST(!err && !strcmp(msg,"hello 2")), "svr time rec [%s] len %d err %d", msg, len, err);
     
     strcpy(msg,"bye 2");
     len = 10;
@@ -537,7 +537,7 @@ void testudpthread(void * s) {
     PRINT("udp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
 
     err = udp_timed_rec((socket_t*)s,msg,&len,&a,100);
-    PRINT("udp_rec", TEST(err && len==0), "server timed rec len %d err %d", len, err);
+    PRINT("udp_rec", TEST(err==ERR_TIMEOUT && len==0), "server timed rec len %d err %d", len, err);
 }
 
 void testtcpthread(void * s) {
@@ -576,13 +576,13 @@ void testtcpthread(void * s) {
     PRINT("tcp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
     
     err = tcp_timed_rec(&ns,msg,&len,100);
-    PRINT("tcp_rec", TEST(err && len==0), "server timed rec len %d err %d", len, err);
+    PRINT("tcp_rec", TEST(err==ERR_TIMEOUT && len==0), "server timed rec len %d err %d", len, err);
 
     err = socket_destroy(&ns);
     PRINT("destroy", TEST(!err), "destroying connection err %d", err);
 
     err = tcp_timed_accept((socket_t*)s,&ns,&a,100);
-    PRINT("tcp_accept", TEST(err), "server timed accept err %d", err);
+    PRINT("tcp_accept", TEST(err==ERR_TIMEOUT), "server timed accept err %d", err);
 }
 
 void testsocket() {
@@ -624,7 +624,6 @@ void testsocket() {
 
    
     thread_join(&tt);
-    thread_destroy(&tt);
     printf("\n");
 
     err = socket_destroy(&s0) |
@@ -673,7 +672,6 @@ void testsocket() {
 
 
     thread_join(&tt);
-    thread_destroy(&tt);
     printf("\n");
     
     err = socket_destroy(&s0) |
@@ -689,6 +687,7 @@ int main(int argc, char ** argv) {
     
     for (;argc > 0; argc--) {       
         TESTF(os);
+        TESTF(err);
         TESTF(types);
         TESTF(pack);
         TESTF(thread);

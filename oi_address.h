@@ -16,6 +16,15 @@
 #ifdef OI_WIN
 #define _OI_RGAI {_OI_NET_DEINIT; return err;}
 #else
+
+#ifndef _OI_EAI
+#if EAI_FAMILY < 0
+#   define _OI_EAI(n) (n)
+#else
+#   define _OI_EAI(n) (-n)
+#endif
+#endif
+
 #define _OI_RGAI { \
         _OI_NET_DEINIT; \
         switch(err) { \

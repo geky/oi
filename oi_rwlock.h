@@ -110,8 +110,9 @@ oi_call rwlock_write_lock(rwlock_t * rw) {
 }
 
 oi_call rwlock_try_write_lock(rwlock_t * rw) {
-    if (!TryEnterCriticalSection(&rw->write_lock)) return 1;
-        EnterCriticalSection(&rw->count_lock);
+    if (!TryEnterCriticalSection(&rw->write_lock)) 
+        return ERROR_BUSY;
+    EnterCriticalSection(&rw->count_lock);
     if (rw->count) {
         LeaveCriticalSection(&rw->count_lock);
         LeaveCriticalSection(&rw->write_lock);

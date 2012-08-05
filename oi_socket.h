@@ -7,6 +7,9 @@
 
 
 #ifdef OI_WIN
+#   define _OI_SERR_NOS WSAEAFNOSUPPORT
+#   define _OI_SERR_TIME ERROR_TIMEOUT
+#   define _OI_CON_ERR (_OI_NET_ERR==WSATIMEDOUT ? _OI_SERR_TIME : _OI_NET_ERR)
 #   define _OI_SOCK SOCKET
 #   define _OI_SINVAL INVALID_SOCKET
 #   define _OI_SCLOSE(sock) closesocket(sock)
@@ -16,6 +19,9 @@
             _OI_SDIE(s); \
     } 
 #else
+#   define _OI_SERR_NOS EAFNOSUPPORT
+#   define _OI_SERR_TIME ETIMEDOUT
+#   define _OI_CON_ERR _OI_NET_ERR
 #   define _OI_SOCK signed int
 #   define _OI_SINVAL -1
 #   define _OI_SCLOSE(sock) close(sock)
@@ -155,7 +161,7 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
         }
 #else
         s->ipv4 = _OI_SINVAL;
-        return 10;
+        return _OI_SERR_NOS;
 #endif    
     } else {
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
@@ -170,7 +176,7 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
         if (bind(s->ipv6, &a->raw, sizeof a->ipv6)) _OI_SDIE(s);
 #else
         s->ipv6 = _OI_SINVAL;
-        return 10;
+        return _OI_SERR_NOS;
 #endif
     }
     return 0;
@@ -186,13 +192,14 @@ oi_call socket_destroy(socket_t * s) {
     return iserr ? _OI_NET_ERR : 0;
 }
 
+//TODO make tcp_timed_connect
 oi_call tcp_connect(socket_t * s, address_t * a) {
     if (a->family == AF_INET) {
 #if defined(OI_IPV4)
-        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) return _OI_NET_ERR;
+        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) return _OI_CON_ERR;
         return 0;
 #elif defined(OI_SINGLESTACK)
-        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) return _OI_NET_ERR;
+        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) return _OI_CON_ERR;
         if (s->ipv6 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv6);
             s->ipv6 = _OI_SINVAL;
@@ -201,24 +208,24 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
 #elif defined(OI_DUALSTACK)
         address_t map;
         _OI_SMAP(a,map)
-        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) return _OI_NET_ERR;
+        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) return _OI_CON_ERR;
         return 0;
 #else
-        return 10;
+        return _OI_SERR_NOS;
 #endif
     } else {
 #if defined(OI_IPV6) || defined(OI_DUALSTACK)
-        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) return _OI_NET_ERR;
+        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) return _OI_CON_ERR;
         return 0;
 #elif defined(OI_SINGLESTACK)
-        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) return _OI_NET_ERR;
+        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) return _OI_CON_ERR;
         if (s->ipv4 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv4);
             s->ipv4 = _OI_SINVAL;
         }
         return 0;
 #else
-        return 10;
+        return _OI_SERR_NOS;
 #endif
     }
 }
@@ -263,14 +270,14 @@ oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
                 _OI_SBLOCK(ns->ipv4);
                 return 0;
             } else return _OI_NET_ERR;
-        } else if (FD_ISSET(s->ipv6,&fset)) {
+        } else {
             ns->ipv6 = accept(s->ipv6, na?&na->raw:&dump.raw, &na_s);
             if (ns->ipv6 != _OI_SINVAL) {
                 _OI_NET_INIT; 
                 _OI_SBLOCK(ns->ipv6);
                 return 0;
             } else return _OI_NET_ERR;
-        } else return 1;      
+        }
     } 
 #else
     ns->ipv6 = _OI_SINVAL;
@@ -330,7 +337,7 @@ oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned i
     err = select(max+1, &fset, 0, 0, &time);
     
     if (err == 0) { 
-        return 1111;
+        return _OI_SERR_TIME;
     } else if (err < 0) {
         return _OI_NET_ERR;
 #if defined(OI_SINGLESTACK)
@@ -342,7 +349,7 @@ oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned i
             return 0;
         } else return _OI_NET_ERR;
 #endif
-    } else if (FD_ISSET(s->ipv6,&fset)) {
+    } else {
         ns->ipv6 = accept(s->ipv6, na?&na->raw:&dump.raw, &na_s);
         if (ns->ipv6 != _OI_SINVAL) {
             _OI_NET_INIT; 
@@ -352,7 +359,7 @@ oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned i
 #endif
            return 0;
         } else return _OI_NET_ERR;
-    } else return 1;
+    }
 }
 
 oi_call tcp_send(socket_t * s, void * buf, size_t * len) {
@@ -404,15 +411,13 @@ oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
     err = select(sock+1, &fset, 0, 0, &time);
     
     if (err == 0) { 
-        return 1111;
+        return _OI_SERR_TIME;
     } else if (err < 0) {
         return _OI_NET_ERR;
-    } else if (FD_ISSET(sock,&fset)) {
+    } else {
         newlen = recv(sock, buf, newlen, 0);
         if (newlen < 0) return _OI_NET_ERR;
         else {*len = newlen; return 0;}
-    } else {
-        return 1;
     }
 }
 
@@ -431,7 +436,7 @@ oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
         if (newlen < 0) return _OI_NET_ERR;
         else {*len = newlen; return 0;}
 #else
-        return 10;
+        return _OI_SERR_NOS;
 #endif
     } else {
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
@@ -439,7 +444,7 @@ oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
         if (newlen < 0) return _OI_NET_ERR;
         else {*len = newlen; return 0;}
 #else
-        return 10;
+        return _OI_SERR_NOS;
 #endif
     }
 }
@@ -465,9 +470,9 @@ oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
         
         if (FD_ISSET(s->ipv4,&fset)) {
             newlen = recvfrom(s->ipv4, buf, newlen, 0, na?&na->raw:&dump.raw, &na_s);
-        } else if (FD_ISSET(s->ipv6,&fset)) {
+        } else {
             newlen = recvfrom(s->ipv6, buf, newlen, 0, na?&na->raw:&dump.raw, &na_s);
-        } else return 1;
+        }
     } 
 #else
     newlen = recvfrom(s->ipv6, buf, newlen, 0, na?&na->raw:&dump.raw, &na_s);
@@ -513,16 +518,16 @@ oi_call udp_timed_rec(socket_t * s, void * buf, size_t * len, address_t * na, un
     err = select(max+1, &fset, 0, 0, &time);
     
     if (err == 0) { 
-        return 1111;
+        return _OI_SERR_TIME;
     } else if (err < 0) {
         return _OI_NET_ERR;
 #if defined(OI_SINGLESTACK)
     } else if (FD_ISSET(s->ipv4,&fset)) {
         newlen = recvfrom(s->ipv4, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
 #endif
-    } else if (FD_ISSET(s->ipv6,&fset)) {
+    } else {
         newlen = recvfrom(s->ipv6, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
-    } else return 1;
+    }
     
     if (newlen < 0) return _OI_NET_ERR;
     else {*len = newlen; return 0;}
