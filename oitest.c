@@ -1,3 +1,4 @@
+#include "oi_os.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -72,7 +73,6 @@ void testos() {
 #endif
 }
 
-#define __USE_GNU
 #include "oi_err.h"
 void testerr() {
     PRINT("error", "\n", "0                    -> %s", get_error(0));

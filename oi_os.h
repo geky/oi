@@ -35,16 +35,8 @@
 #   define OI_LINUX
 #
 #   ifndef _GNU_SOURCE
-#   define _GNU_SOURCE
+#   define _GNU_SOURCE 1
 #   endif
-#
-//#   ifndef _XOPEN_SOURCE
-//#   define _XOPEN_SOURCE 500
-//#   endif
-#
-//#   ifndef _UNIX98_SOURCE
-//#   define _UNIX98_SOURCE
-//#   endif
 #
 #elif defined(__APPLE__) || defined(MACOSX) || defined(macintosh) || defined(Macintosh)
 #   define OI_MAC
@@ -62,7 +54,7 @@
 #else
 #   define oi_func static __inline
 #endif
-
 #define oi_call oi_func int
 
 #endif
+
