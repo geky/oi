@@ -518,6 +518,49 @@ void testaddress() {
 }
 
 #include "oi_socket.h"
+void testsocket() {
+    int err;
+    address_t temp;
+    socket_t s0,s1,s2;
+
+    err = socket_create(&s0,SOCKET_UDP,12345);
+    PRINT("create", TEST(!err), "creating tcp socket on 12345 err %d", err);
+
+    address_loopback(&temp,4321);
+    err = socket_create_on(&s1,SOCKET_UDP,&temp);
+    PRINT("", TEST(!err), "creating udp socket on lo:4321 err %d", err);
+
+    err = socket_create(&s2,SOCKET_TCP,0);
+    PRINT("", TEST(!err), "creating tcp socket on any err %d", err);
+    printf("\n");
+
+    err = socket_get_send_buffer(&s0);
+    PRINT("send_buff", "\n", "get -> %d", err);
+    err = socket_set_send_buffer(&s0,32);
+    PRINT("", TEST(!err), "set (32) err %d", err);
+    err = socket_get_rec_buffer(&s0);
+    PRINT("rec_buff", "\n", "get -> %d", err);
+    err = socket_set_rec_buffer(&s0,32);
+    PRINT("", TEST(!err), "set (32) err %d", err);
+    err = socket_get_send_timeout(&s0);
+    PRINT("send_time", "\n", "get -> %d", err);
+    err = socket_set_send_timeout(&s0,32);
+    PRINT("", TEST(!err), "set (32) err %d", err);
+    err = socket_get_rec_timeout(&s0);
+    PRINT("rec_time", "\n", "get -> %d", err);
+    err = socket_set_rec_timeout(&s0,32);
+    PRINT("", TEST(!err), "set (32) err %d", err);
+    printf("\n");
+   
+    err = socket_destroy(&s0);
+    PRINT("destroy", TEST(!err), "destroying socket err %d", err);
+    err = socket_destroy(&s1);
+    PRINT("", TEST(!err), "destroying socket err %d", err);
+    err = socket_destroy(&s2);
+    PRINT("", TEST(!err), "destroying socket err %d", err);
+}
+
+#include "oi_udp.h"
 void testudpthread(void * s) {
     int err;
     size_t len = 10;
@@ -544,6 +587,54 @@ void testudpthread(void * s) {
     PRINT("udp_rec", TEST(err==ERR_TIMEOUT && len==0), "server timed rec len %d err %d", len, err);
 }
 
+void testudp() {
+    int err;
+    size_t len = 10;
+    char msg[10] = "hello 1";
+    address_t temp;
+    socket_t s0,s1,s2;
+    thread_t tt;
+
+    err = socket_create(&s0,SOCKET_UDP,12345);
+    PRINT("create", TEST(!err), "creating udp socket on 12345 err %d", err);
+
+    address_loopback(&temp,4321);
+    err = socket_create_on(&s1,SOCKET_UDP,&temp);
+    PRINT("", TEST(!err), "creating udp socket on lo:4321 err %d", err);
+
+    err = socket_create(&s2,SOCKET_UDP,0);
+    PRINT("", TEST(!err), "creating udp socket on any err %d", err);
+    printf("\n");
+
+    thread_create(&tt,&testudpthread,&s0);
+
+    address_loopback(&temp,12345);
+    err = udp_send(&s1,msg,&len,&temp);
+    PRINT("udp_send", TEST(!err), "client send  [%s] len %d err %d", msg, len, err);
+    
+    err = udp_rec(&s1,msg,&len,0);
+    PRINT("udp_rec", TEST(!err && !strcmp(msg,"bye 1")), "client rec   [%s] len %d err %d", msg, len, err);
+
+    strcpy(msg,"hello 2");
+    len = 10;
+    address_loopback(&temp,12345);
+    err = udp_send(&s2,msg,&len,&temp);
+    PRINT("udp_send", TEST(!err), "client send  [%s] len %d err %d", msg, len, err);
+
+    err = udp_rec(&s2,msg,&len,0);
+    PRINT("udp_rec", TEST(!err && !strcmp(msg,"bye 2")), "client rec   [%s] len %d err %d", msg, len, err);
+
+   
+    thread_join(&tt);
+    printf("\n");
+
+    err = socket_destroy(&s0) |
+          socket_destroy(&s1) |
+          socket_destroy(&s2);
+    PRINT("destroy", TEST(!err), "destroying sockets err %d", err);
+}
+
+#include "oi_tcp.h"
 void testtcpthread(void * s) {
     int err;
     size_t len = 10;
@@ -589,51 +680,13 @@ void testtcpthread(void * s) {
     PRINT("tcp_accept", TEST(err==ERR_TIMEOUT), "server timed accept err %d", err);
 }
 
-void testsocket() {
+void testtcp() {
     int err;
     size_t len = 10;
     char msg[10] = "hello 1";
     address_t temp;
     socket_t s0,s1,s2;
     thread_t tt;
-
-    err = socket_create(&s0,SOCKET_UDP,12345);
-    PRINT("create", TEST(!err), "creating udp socket on 12345 err %d", err);
-
-    address_loopback(&temp,4321);
-    err = socket_create_on(&s1,SOCKET_UDP,&temp);
-    PRINT("", TEST(!err), "creating udp socket on lo:4321 err %d", err);
-
-    err = socket_create(&s2,SOCKET_UDP,0);
-    PRINT("", TEST(!err), "creating udp socket on any err %d", err);
-    printf("\n");
-
-    thread_create(&tt,&testudpthread,&s0);
-
-    address_loopback(&temp,12345);
-    err = udp_send(&s1,msg,&len,&temp);
-    PRINT("udp_send", TEST(!err), "client send  [%s] len %d err %d", msg, len, err);
-    
-    err = udp_rec(&s1,msg,&len,0);
-    PRINT("udp_rec", TEST(!err && !strcmp(msg,"bye 1")), "client rec   [%s] len %d err %d", msg, len, err);
-
-    strcpy(msg,"hello 2");
-    len = 10;
-    address_loopback(&temp,12345);
-    err = udp_send(&s2,msg,&len,&temp);
-    PRINT("udp_send", TEST(!err), "client send  [%s] len %d err %d", msg, len, err);
-
-    err = udp_rec(&s2,msg,&len,0);
-    PRINT("udp_rec", TEST(!err && !strcmp(msg,"bye 2")), "client rec   [%s] len %d err %d", msg, len, err);
-
-   
-    thread_join(&tt);
-    printf("\n");
-
-    err = socket_destroy(&s0) |
-          socket_destroy(&s1) |
-          socket_destroy(&s2);
-    PRINT("destroy", TEST(!err), "destroying sockets err %d", err);
 
     err = socket_create(&s0,SOCKET_TCP,12345);
     PRINT("create", TEST(!err), "creating tcp socket on 12345 err %d", err);
@@ -714,13 +767,15 @@ int main(int argc, char ** argv) {
         TESTF(net);
         TESTF(address);
         TESTF(socket);
+        TESTF(udp);
+        TESTF(tcp);
     }
 
     if (rrr) printf(TXTR"\noi has failed a test on this system.\nchanges are necessary for oi to work.\nFAILED!\n\n"TXTN);
     else printf("\noi is functional on this system.\n"TXTY"success!\n\n"TXTN);
 
 #ifdef WAIT    
-    printf("Press enter to continue\n");
+    printf("press enter to continue\n");
     getchar();
 #endif
     
