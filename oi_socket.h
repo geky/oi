@@ -232,36 +232,6 @@ oi_call socket_set_rec_buffer(socket_t * s, size_t len) {
     return 0;
 }
 
-oi_call socket_set_send_timeout(socket_t * s, unsigned int ms) {
-    struct timeval time;
-    time.tv_usec = (ms%1000)*1000;
-    time.tv_sec = (ms/1000);
-#if defined(OI_SINGLESTACK)
-    if (s->ipv4!=_OI_SINVAL && setsockopt(s->ipv4,
-                           SOL_SOCKET,SO_SNDTIMEO,(char*)&time,sizeof time))
-        return _OI_NET_ERR;
-#endif
-    if (s->ipv6!=_OI_SINVAL && setsockopt(s->ipv6,
-                           SOL_SOCKET,SO_SNDTIMEO,(char*)&time,sizeof time))
-        return _OI_NET_ERR;
-    return 0;
-}
-
-oi_call socket_set_rec_timeout(socket_t * s, unsigned int ms) {
-    struct timeval time;
-    time.tv_usec = (ms%1000)*1000;
-    time.tv_sec = (ms/1000);
-#if defined(OI_SINGLESTACK)
-    if (s->ipv4!=_OI_SINVAL && setsockopt(s->ipv4,
-                           SOL_SOCKET,SO_RCVTIMEO,(char*)&time,sizeof time))
-        return _OI_NET_ERR;
-#endif
-    if (s->ipv6!=_OI_SINVAL && setsockopt(s->ipv6,
-                           SOL_SOCKET,SO_RCVTIMEO,(char*)&time,sizeof time))
-        return _OI_NET_ERR;
-    return 0;
-}
-
 oi_func size_t socket_get_send_buffer(socket_t * s) {
     size_t len;
     socklen_t llen = sizeof len;
@@ -284,30 +254,6 @@ oi_func size_t socket_get_rec_buffer(socket_t * s) {
     getsockopt(s->ipv6,SOL_SOCKET,SO_RCVBUF,(char*)&len,&llen);
 #endif
     return len;
-}
-
-oi_func unsigned int socket_get_send_timeout(socket_t * s) {
-    struct timeval time;
-    socklen_t llen = sizeof time;
-#if defined(OI_SINGLESTACK)
-    getsockopt(s->ipv6==_OI_SINVAL ? s->ipv4 : s->ipv6,
-                       SOL_SOCKET,SO_SNDTIMEO,(char*)&time,&llen);
-#else
-    getsockopt(s->ipv6,SOL_SOCKET,SO_SNDTIMEO,(char*)&time,&llen);
-#endif
-    return (time.tv_sec*1000)+(time.tv_usec/1000);
-}
-
-oi_func unsigned int socket_get_rec_timeout(socket_t * s) {
-    struct timeval time;
-    socklen_t llen = sizeof time;
-#if defined(OI_SINGLESTACK)
-    getsockopt(s->ipv6==_OI_SINVAL ? s->ipv4 : s->ipv6,
-                       SOL_SOCKET,SO_RCVTIMEO,(char*)&time,&llen);
-#else
-    getsockopt(s->ipv6,SOL_SOCKET,SO_RCVTIMEO,(char*)&time,&llen);
-#endif
-    return (time.tv_sec*1000)+(time.tv_usec/1000);
 }
 
 #endif
