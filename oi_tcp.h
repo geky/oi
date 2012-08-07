@@ -289,5 +289,36 @@ oi_call tcp_rec(socket_t * s, void * buf, size_t * len) {
     else {*len = newlen; return 0;}
 }
 
+oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
+    int newlen = *len;
+    fd_set fset;
+    struct timeval time;
+    int err;
+    _oi_sock sock;
+
+    *len = 0;
+    FD_ZERO(&fset);
+    time.tv_usec = (ms%1000)*1000;
+    time.tv_sec = (ms/1000);
+#if defined(OI_SINGLESTACK)
+    sock = s->ipv6 == _OI_SINVAL ? s->ipv4 : s->ipv6;
+#else
+    sock = s->ipv6;
+#endif
+    FD_SET(sock,&fset);
+    
+    err = select(sock+1, &fset, 0, 0, &time);
+    
+    if (err == 0) { 
+        return _OI_SERR_TIME;
+    } else if (err < 0) {
+        return _OI_NET_ERR;
+    } else {
+        newlen = recv(sock, buf, newlen, 0);
+        if (newlen < 0) return _OI_NET_ERR;
+        else {*len = newlen; return 0;}
+    }
+}
+
 #endif
 
