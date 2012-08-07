@@ -542,14 +542,6 @@ void testsocket() {
     PRINT("rec_buff", "\n", "get -> %d", err);
     err = socket_set_rec_buffer(&s0,32);
     PRINT("", TEST(!err), "set (32) err %d", err);
-    err = socket_get_send_timeout(&s0);
-    PRINT("send_time", "\n", "get -> %d", err);
-    err = socket_set_send_timeout(&s0,32);
-    PRINT("", TEST(!err), "set (32) err %d", err);
-    err = socket_get_rec_timeout(&s0);
-    PRINT("rec_time", "\n", "get -> %d", err);
-    err = socket_set_rec_timeout(&s0,32);
-    PRINT("", TEST(!err), "set (32) err %d", err);
     printf("\n");
    
     err = socket_destroy(&s0);

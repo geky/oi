@@ -44,7 +44,6 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
 oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
     fd_set fset;
     struct timeval time;
-    int err;
 
     FD_ZERO(&fset);
     time.tv_usec = (ms%1000)*1000;
@@ -63,17 +62,16 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
         }
 #endif
         FD_SET(s->ipv4,&fset);
-        err = select(s->ipv4+1, 0, &fset, 0, &time);
-        
-        if (err == 0) {
-            socket_destroy(s);
-            return _OI_SERR_TIME;
-        } else if (err < 0) {
+        if (0 > select(s->ipv4+1, 0, &fset, 0, &time))
             _OI_SDIE(NET,s);
-        } else {
+        
+        if (FD_ISSET(s->ipv4,&fset)) {
             _OI_SBLOCK(s->ipv4);
             if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) return _OI_TCP_ERR;
             return 0;
+        } else {
+            socket_destroy(s);
+            return _OI_SERR_TIME;
         }
 #elif defined(OI_DUALSTACK)
         address_t map;
@@ -84,17 +82,16 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
                 _OI_SDIE(TCP,s);
     
         FD_SET(s->ipv6,&fset);
-        err = select(s->ipv6+1, 0, &fset, 0, &time);
-    
-        if (err == 0) {
-            socket_destroy(s);
-            return _OI_SERR_TIME;
-        } else if (err < 0) {
+        if (0 > select(s->ipv6+1, 0, &fset, 0, &time))
             _OI_SDIE(NET,s);
-        } else {
+    
+        if (FD_ISSET(s->ipv6,&fset)) {
             _OI_SBLOCK(s->ipv6);
             if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) return _OI_TCP_ERR;
             return 0;
+        } else {
+            socket_destroy(s);
+            return _OI_SERR_TIME;
         }
 #else
         return _OI_SERR_NOS;
@@ -112,17 +109,16 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
         }
 #endif
         FD_SET(s->ipv6,&fset);
-        err = select(s->ipv6+1, 0, &fset, 0, &time);
-    
-        if (err == 0) {
-            socket_destroy(s);
-            return _OI_SERR_TIME;
-        } else if (err < 0) {
+        if (0 > select(s->ipv6+1, 0, &fset, 0, &time)) 
             _OI_SDIE(NET,s);
-        } else {
+    
+        if (FD_ISSET(s->ipv6,&fset)) {
             _OI_SBLOCK(s->ipv6);
             if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) return _OI_TCP_ERR;
             return 0;
+        } else {
+            socket_destroy(s);
+            return _OI_SERR_TIME;
         }
 #else
         return _OI_SERR_NOS;
@@ -159,8 +155,7 @@ oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
         FD_ZERO(&fset);
         FD_SET(s->ipv4,&fset);
         FD_SET(s->ipv6,&fset);
-        if (0 > select((s->ipv4>s->ipv6?s->ipv4:s->ipv6)+1, &fset,0,0,0))
-            return _OI_NET_ERR;    
+        select((s->ipv4>s->ipv6?s->ipv4:s->ipv6)+1, &fset,0,0,0);
         
         if (FD_ISSET(s->ipv4,&fset)) {
             ns->ipv4 = accept(s->ipv4, na?&na->raw:&dump.raw, &na_s);
@@ -168,15 +163,17 @@ oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
                 _OI_NET_INIT; 
                 _OI_SBLOCK(ns->ipv4);
                 return 0;
-            } else return _OI_NET_ERR;
-        } else {
+            }
+        } else if (FD_ISSET(s->ipv6,&fset)) {
             ns->ipv6 = accept(s->ipv6, na?&na->raw:&dump.raw, &na_s);
             if (ns->ipv6 != _OI_SINVAL) {
                 _OI_NET_INIT; 
                 _OI_SBLOCK(ns->ipv6);
                 return 0;
-            } else return _OI_NET_ERR;
+            }
         }
+
+        return _OI_NET_ERR;
     } 
 #else
     ns->ipv6 = _OI_SINVAL;
@@ -199,7 +196,6 @@ oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned i
     address_t dump;
     fd_set fset;
     struct timeval time;
-    int err;
     _oi_sock max;
 
     FD_ZERO(&fset);
@@ -233,22 +229,10 @@ oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned i
     max = s->ipv6;
 #endif
     
-    err = select(max+1, &fset, 0, 0, &time);
-    
-    if (err == 0) { 
-        return _OI_SERR_TIME;
-    } else if (err < 0) {
+    if (0 > select(max+1, &fset, 0, 0, &time))
         return _OI_NET_ERR;
-#if defined(OI_SINGLESTACK)
-    } else if (FD_ISSET(s->ipv4,&fset)) {
-        ns->ipv4 = accept(s->ipv4, na?&na->raw:&dump.raw, &na_s);
-        if (ns->ipv4 != _OI_SINVAL) {
-            _OI_NET_INIT; 
-            _OI_SBLOCK(ns->ipv4);
-            return 0;
-        } else return _OI_NET_ERR;
-#endif
-    } else {
+    
+    if (FD_ISSET(s->ipv6,&fset)) {
         ns->ipv6 = accept(s->ipv6, na?&na->raw:&dump.raw, &na_s);
         if (ns->ipv6 != _OI_SINVAL) {
             _OI_NET_INIT; 
@@ -257,8 +241,19 @@ oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned i
             _OI_SUMAP(na);
 #endif
            return 0;
-        } else return _OI_NET_ERR;
-    }
+        } 
+#if defined(OI_SINGLESTACK)
+    } else if (FD_ISSET(s->ipv4,&fset)) {
+        ns->ipv4 = accept(s->ipv4, na?&na->raw:&dump.raw, &na_s);
+        if (ns->ipv4 != _OI_SINVAL) {
+            _OI_NET_INIT; 
+            _OI_SBLOCK(ns->ipv4);
+            return 0;
+        }
+#endif
+    } else return _OI_SERR_TIME;
+
+    return _OI_NET_ERR;
 }
 
 oi_call tcp_send(socket_t * s, void * buf, size_t * len) {
@@ -286,14 +281,14 @@ oi_call tcp_rec(socket_t * s, void * buf, size_t * len) {
     newlen = recv(s->ipv6,buf,newlen,0);
 #endif
     if (newlen < 0) return _OI_TCP_ERR; 
-    else {*len = newlen; return 0;}
+    *len = newlen; 
+    return 0;
 }
 
 oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
     int newlen = *len;
     fd_set fset;
     struct timeval time;
-    int err;
     _oi_sock sock;
 
     *len = 0;
@@ -307,17 +302,15 @@ oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
 #endif
     FD_SET(sock,&fset);
     
-    err = select(sock+1, &fset, 0, 0, &time);
-    
-    if (err == 0) { 
-        return _OI_SERR_TIME;
-    } else if (err < 0) {
+    if (0 > select(sock+1, &fset, 0, 0, &time))
         return _OI_NET_ERR;
-    } else {
+    
+    if (FD_ISSET(sock,&fset)) {
         newlen = recv(sock, buf, newlen, 0);
         if (newlen < 0) return _OI_NET_ERR;
-        else {*len = newlen; return 0;}
-    }
+        *len = newlen; 
+        return 0;
+    } return _OI_SERR_TIME;
 }
 
 #endif
