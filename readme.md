@@ -1,4 +1,4 @@
-[OI](http://github.com:geky/oi) - OS Interface
+[OI](http://github.com/geky/oi) - OS Interface
 ----------------------------------------------
 
 ### Overveiw ###
@@ -23,15 +23,15 @@ Anything in the files that begins with `_oi` is intended only for internal use, 
 
 ### Documentation  ###
 
-A full documentation of each file can be found in [docs.md](docs.md).
+A full documentation of each file can be found in [docs.md](blob/master/docs.md).
 
 ### Testing ###
 
-OI is trying to implement a standard interface for utilities that are common for applications on modern computers. This isn't C's main focus, so most of the implementations of these utilities vary widely from computer to computer. A simple program [test.c](test.c) is provided for a quick way to confirm OI works on a target platform. However, it is impossible to cover every OS, so if you find an OS where OI breaks, please let us know, or even implement a fix yourself and submit a pull request.
+OI is trying to implement a standard interface for utilities that are common for applications on modern computers. This isn't C's main focus, so most of the implementations of these utilities vary widely from computer to computer. A simple program [test.c](blob/master/test.c) is provided for a quick way to confirm OI works on a target platform. However, it is impossible to cover every OS, so if you find an OS where OI breaks, please let us know, or even implement a fix yourself and submit a pull request.
 
 ### Example ###
 
-Here is a simple example of using oi:
+Here is a simple example of using OI:
 
     #include "oi_thread.h"
     #include <stdio.h>
