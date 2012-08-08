@@ -9,7 +9,7 @@
 oi_call tcp_connect(socket_t * s, address_t * a) {
     if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
-        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(TCP,s);
+        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(TIME,s);
 #if defined(OI_SINGLESTACK)
         if (s->ipv6 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv6);
@@ -20,14 +20,14 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
 #elif defined(OI_DUALSTACK)
         address_t map;
         _OI_SMAP(a,map)
-        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) _OI_SDIE(TCP,s);
+        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) _OI_SDIE(TIME,s);
         return 0;
 #else
         return _OI_SERR_NOS;
 #endif
     } else {
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
-        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) _OI_SDIE(TCP,s);
+        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) _OI_SDIE(TIME,s);
 #if defined(OI_SINGLESTACK)
         if (s->ipv4 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv4);
@@ -54,7 +54,7 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
         _OI_SUNBLOCK(s->ipv4);
         if (connect(s->ipv4, &a->raw, sizeof a->ipv4) && 
             _OI_NET_ERR != _OI_SERR_PROG)
-                _OI_SDIE(TCP,s);
+                _OI_SDIE(TIME,s);
 #if defined(OI_SINGLESTACK)
         if (s->ipv6 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv6);
@@ -67,7 +67,9 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
         
         if (FD_ISSET(s->ipv4,&fset)) {
             _OI_SBLOCK(s->ipv4);
-            if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) return _OI_TCP_ERR;
+            if (connect(s->ipv4, &a->raw, sizeof a->ipv4) && 
+                _OI_NET_ERR != _OI_SERR_CONN) 
+                    return _OI_TIME_ERR;
             return 0;
         } else {
             socket_destroy(s);
@@ -79,7 +81,7 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
         _OI_SUNBLOCK(s->ipv6);
         if (connect(s->ipv6, &map.raw, sizeof map.ipv6) &&
             _OI_NET_ERR != _OI_SERR_PROG) 
-                _OI_SDIE(TCP,s);
+                _OI_SDIE(TIME,s);
     
         FD_SET(s->ipv6,&fset);
         if (0 > select(s->ipv6+1, 0, &fset, 0, &time))
@@ -87,7 +89,7 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
     
         if (FD_ISSET(s->ipv6,&fset)) {
             _OI_SBLOCK(s->ipv6);
-            if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) return _OI_TCP_ERR;
+            if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) return _OI_TIME_ERR;
             return 0;
         } else {
             socket_destroy(s);
@@ -101,7 +103,7 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
         _OI_SUNBLOCK(s->ipv6);
         if (connect(s->ipv6, &a->raw, sizeof a->ipv6) &&
             _OI_NET_ERR != _OI_SERR_PROG) 
-                _OI_SDIE(TCP,s);
+                _OI_SDIE(TIME,s);
 #if defined(OI_SINGLESTACK)
         if (s->ipv4 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv4);
@@ -114,7 +116,9 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
     
         if (FD_ISSET(s->ipv6,&fset)) {
             _OI_SBLOCK(s->ipv6);
-            if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) return _OI_TCP_ERR;
+            if (connect(s->ipv6, &a->raw, sizeof a->ipv6) && 
+                _OI_NET_ERR != _OI_SERR_CONN) 
+                    return _OI_TIME_ERR;
             return 0;
         } else {
             socket_destroy(s);
@@ -266,7 +270,7 @@ oi_call tcp_send(socket_t * s, void * buf, size_t * len) {
 #else
         newlen = send(s->ipv6,*len+(char*)buf,sendlen-*len,0);
 #endif
-        if (newlen < 0) return _OI_TCP_ERR;
+        if (newlen < 0) return _OI_TIME_ERR;
         *len += (size_t)newlen;
     }
     return 0;
@@ -280,7 +284,7 @@ oi_call tcp_rec(socket_t * s, void * buf, size_t * len) {
 #else
     newlen = recv(s->ipv6,buf,newlen,0);
 #endif
-    if (newlen < 0) return _OI_TCP_ERR; 
+    if (newlen < 0) return _OI_TIME_ERR; 
     *len = newlen; 
     return 0;
 }

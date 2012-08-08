@@ -21,11 +21,11 @@ volatile char rrr = 0;
 
 void PRINT(const char * tt, const char * test, const char * ss, ...) {
     va_list args;
-    char arrrr[80]; 
+    char arrrr[255]; 
     va_start(args,ss);
     vsprintf(arrrr,ss,args); 
     va_end(args);
-    printf("\t%-10s: %-41s%s",tt,arrrr,test);
+    printf("\t%-10s: %-41.41s%s",tt,arrrr,test);
 }
 
 const char * MEM(int b, void * p, int len) {
@@ -75,16 +75,37 @@ void testos() {
 
 #include "oi_err.h"
 void testerr() {
-    PRINT("error", "\n", "0                    -> %s", get_error(0));
-    PRINT("", "\n", "ERR_IN_USE           -> %s", get_error(ERR_IN_USE));
-    PRINT("", "\n", "ERR_TIMEOUT          -> %s", get_error(ERR_TIMEOUT));
-    PRINT("", "\n", "ERR_NOT_FOUND        -> %s", get_error(ERR_NOT_FOUND));
-    PRINT("", "\n", "ERR_NO_DATA          -> %s", get_error(ERR_NO_DATA));
-    PRINT("", "\n", "ERR_TAKEN            -> %s", get_error(ERR_TAKEN));
-    PRINT("", "\n", "ERR_REFUSED          -> %s", get_error(ERR_REFUSED));
-    PRINT("", "\n", "ERR_UNREACHABLE_HOST -> %s", get_error(ERR_UNREACHABLE_HOST));
-    PRINT("", "\n", "ERR_UNREACHABLE_NET  -> %s", get_error(ERR_UNREACHABLE_NET));
-    PRINT("", "\n", "ERR_DISCONNECTED     -> %s", get_error(ERR_DISCONNECTED));
+    const char * p;
+    p = get_error(0);
+    PRINT("get_error", "\n", "0");
+    PRINT("", TEST(p), " -> %s", p);
+    p = get_error(ERR_IN_USE);
+    PRINT("", "\n", "ERR_IN_USE");
+    PRINT("", TEST(p), " -> %s", p);
+    p = get_error(ERR_TIMEOUT);
+    PRINT("", "\n", "ERR_TIMEOUT");
+    PRINT("", TEST(p), " -> %s", p);
+    p = get_error(ERR_NOT_FOUND);
+    PRINT("", "\n", "ERR_NOT_FOUND");
+    PRINT("", TEST(p), " -> %s", p);
+    p = get_error(ERR_NO_DATA);
+    PRINT("", "\n", "ERR_NO_DATA");
+    PRINT("", TEST(p), " -> %s", p);
+    p = get_error(ERR_TAKEN);
+    PRINT("", "\n", "ERR_TAKEN");
+    PRINT("", TEST(p), " -> %s", p);
+    p = get_error(ERR_REFUSED);
+    PRINT("", "\n", "ERR_REFUSED");
+    PRINT("", TEST(p), " -> %s", p);
+    p = get_error(ERR_UNREACHABLE_HOST);
+    PRINT("", "\n", "ERR_UNREACHABLE_HOST");
+    PRINT("", TEST(p), " -> %s", p);
+    p = get_error(ERR_UNREACHABLE_NET);
+    PRINT("", "\n", "ERR_UNREACHABLE_NET");
+    PRINT("", TEST(p), " -> %s", p);
+    p = get_error(ERR_DISCONNECTED);
+    PRINT("", "\n", "ERR_DISCONNECTED");
+    PRINT("", TEST(p), " -> %s", p);
 }
 
 #include "oi_types.h"
@@ -446,7 +467,7 @@ void testaddress() {
     size_t len,count;
     uint16 oport;
     char buff[2][41];
-    int time;
+    uint64 time;
 
     uint8 ta4[] = {8,8,8,8};
     uint8 ta6[] = {0x20,0x01,0x48,0x60,0x48,0x60,0,0,0,0,0,0,0,0,0x88,0x88};
@@ -730,10 +751,6 @@ void testtcp() {
     
     err = socket_create(&s0,SOCKET_TCP,0);
     PRINT("create", TEST(!err), "creating tcp socket on any err %d", err);
-    
-    address_loopback(&temp,12345);
-    err = tcp_timed_connect(&s0,&temp,100);
-    PRINT("tcp_connec", TEST(err==ERR_REFUSED), "client timed connect err %d", err);
     
     address_from_name(&temp,"1.1.1.1",12345,0);
     err = tcp_timed_connect(&s0,&temp,100);

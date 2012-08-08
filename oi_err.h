@@ -9,6 +9,7 @@ enum {
     ERR_TIMEOUT             = ERROR_TIMEOUT     ,
     ERR_NOT_FOUND           = WSAHOST_NOT_FOUND ,
     ERR_NO_DATA             = WSANO_DATA        ,
+    ERR_TAKEN               = WSAEADDRINUSE     ,
     ERR_REFUSED             = WSAECONNREFUSED   ,
     ERR_UNREACHABLE_HOST    = WSAEHOSTUNREACH   ,
     ERR_UNREACHABLE_NET     = WSAENETUNREACH    ,
@@ -18,13 +19,16 @@ enum {
 static char _oi_err_buff[256];
 
 oi_func const char * get_error(int err) {
+    char * p;
     if (err < 0 ) return strerror(-err);
-
+    
     FormatMessage(
         FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
         0, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        _oi_err_buff, sizeof _oi_err_buff, 0
+        _oi_err_buff, sizeof _oi_err_buff-1, 0
     );
+    p = strchr(_oi_err_buff,'\r');
+    if (p) *p = 0;
     return _oi_err_buff;
 }
 

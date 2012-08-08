@@ -11,7 +11,8 @@ typedef SOCKET _oi_sock;
 #   define _OI_SERR_NOS WSAEAFNOSUPPORT
 #   define _OI_SERR_TIME ERROR_TIMEOUT
 #   define _OI_SERR_PROG WSAEWOULDBLOCK
-#   define _OI_TCP_ERR (_OI_NET_ERR==WSAETIMEDOUT?_OI_SERR_TIME:_OI_NET_ERR)
+#   define _OI_SERR_CONN WSAEISCONN
+#   define _OI_TIME_ERR (_OI_NET_ERR==WSAETIMEDOUT?_OI_SERR_TIME:_OI_NET_ERR)
 #   define _OI_SINVAL INVALID_SOCKET
 #   define _OI_SCLOSE(sock) closesocket(sock)
 #   define _OI_SBLOCK(sock) { \
@@ -29,7 +30,8 @@ typedef signed int _oi_sock;
 #   define _OI_SERR_NOS EAFNOSUPPORT
 #   define _OI_SERR_TIME ETIMEDOUT
 #   define _OI_SERR_PROG EINPROGRESS
-#   define _OI_TCP_ERR _OI_NET_ERR
+#   define _OI_SERR_CONN EISCONN
+#   define _OI_TIME_ERR _OI_NET_ERR
 #   define _OI_SINVAL -1
 #   define _OI_SCLOSE(sock) close(sock)
 #   define _OI_SBLOCK(sock) \
