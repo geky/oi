@@ -1,10 +1,10 @@
+// requires -lws2_32 for windows
 #ifndef OI_SOCKET
 #define OI_SOCKET 1
 #include "oi_os.h"
 #include "oi_types.h"
 #include "oi_net.h"
 #include "oi_address.h"
-
 
 #ifdef OI_WIN
 typedef SOCKET _oi_sock;
@@ -88,7 +88,6 @@ typedef union {
 } socket_t;
 #endif
 
-oi_call socket_destroy(socket_t * s);
 #define _OI_SDIE(rr,ss) {int ee=_OI_##rr##_ERR; socket_destroy(ss); return ee;}
 #define _OI_SMAP(addr,map) \
     memset(&map,0,sizeof map); \
@@ -113,6 +112,22 @@ oi_call socket_destroy(socket_t * s);
         memcpy(&addr->ipv4.sin_addr, &addr->ipv6.sin6_addr.s6_addr[12], 4); \
     }
 
+
+oi_call socket_destroy(socket_t * s) {
+    int iserr = 0;
+#if defined(OI_SINGLESTACK)
+    if (s->ipv4 != _OI_SINVAL) {
+        iserr |= _OI_SCLOSE(s->ipv4);
+        s->ipv4 = _OI_SINVAL;
+    }
+#endif
+    if (s->ipv6 != _OI_SINVAL) {
+        iserr |= _OI_SCLOSE(s->ipv6);
+        s->ipv6 = _OI_SINVAL;
+    }
+    _OI_NET_DEINIT;
+    return iserr ? _OI_NET_ERR : 0;
+}
 
 oi_call socket_create(socket_t * s, int proto, uint16 port) {
     address_t temp;
@@ -194,22 +209,6 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
     return 0;
 }
 
-oi_call socket_destroy(socket_t * s) {
-    int iserr = 0;
-#if defined(OI_SINGLESTACK)
-    if (s->ipv4 != _OI_SINVAL) {
-        iserr |= _OI_SCLOSE(s->ipv4);
-        s->ipv4 = _OI_SINVAL;
-    }
-#endif
-    if (s->ipv6 != _OI_SINVAL) {
-        iserr |= _OI_SCLOSE(s->ipv6);
-        s->ipv6 = _OI_SINVAL;
-    }
-    _OI_NET_DEINIT;
-    return iserr ? _OI_NET_ERR : 0;
-}
-
 oi_call socket_set_send_buffer(socket_t * s, size_t len) {
 #if defined(OI_SINGLESTACK)    
     if (s->ipv4!=_OI_SINVAL && setsockopt(s->ipv4,
@@ -259,4 +258,3 @@ oi_func size_t socket_get_rec_buffer(socket_t * s) {
 }
 
 #endif
-

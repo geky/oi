@@ -1,3 +1,4 @@
+// requires -lws2_32 for windows
 #ifndef OI_UDP
 #define OI_UDP 1
 #include "oi_os.h"

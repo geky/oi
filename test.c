@@ -712,6 +712,16 @@ void testtcp() {
     PRINT("", TEST(!err), "creating tcp socket on any err %d", err);
     printf("\n");
 
+    err = tcp_get_keepalive(&s1);
+    PRINT("keepalive", "\n", "get -> %d", err);
+    err = tcp_set_keepalive(&s1,1);
+    PRINT("", TEST(!err), "set (1) err %d", err);
+    err = tcp_get_nodelay(&s2);
+    PRINT("nodelay", "\n", "get -> %d", err);
+    err = tcp_set_nodelay(&s2,1);
+    PRINT("", TEST(!err), "set (1) err %d", err);
+    printf("\n");
+
     thread_create(&tt,&testtcpthread,&s0);
 
 

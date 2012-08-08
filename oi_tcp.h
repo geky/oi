@@ -1,3 +1,4 @@
+// requires -lws2_32 for windows
 #ifndef OI_TCP
 #define OI_TCP 1
 #include "oi_os.h"
@@ -317,5 +318,52 @@ oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
     } return _OI_SERR_TIME;
 }
 
+oi_call tcp_set_nodelay(socket_t * s, int val) {
+#if defined(OI_SINGLESTACK)    
+    if (s->ipv4!=_OI_SINVAL && setsockopt(s->ipv4,
+                           IPPROTO_TCP,SO_SNDBUF,(char*)&val,sizeof val))
+        return _OI_NET_ERR;
 #endif
+    if (s->ipv6!=_OI_SINVAL && setsockopt(s->ipv6,
+                           IPPROTO_TCP,SO_SNDBUF,(char*)&val,sizeof val))
+        return _OI_NET_ERR;
+    return 0;
+}
 
+oi_call tcp_set_keepalive(socket_t * s, int val) {
+#if defined(OI_SINGLESTACK)
+    if (s->ipv4!=_OI_SINVAL && setsockopt(s->ipv4,
+                           SOL_SOCKET,SO_KEEPALIVE,(char*)&val,sizeof val))
+        return _OI_NET_ERR;
+#endif
+    if (s->ipv6!=_OI_SINVAL && setsockopt(s->ipv6,
+                           SOL_SOCKET,SO_KEEPALIVE,(char*)&val,sizeof val))
+        return _OI_NET_ERR;
+    return 0;
+}
+
+oi_func int tcp_get_nodelay(socket_t * s) {
+    int val;
+    socklen_t lval = sizeof val;
+#if defined(OI_SINGLESTACK)
+    getsockopt(s->ipv6==_OI_SINVAL ? s->ipv4 : s->ipv6,
+                       IPPROTO_TCP,TCP_NODELAY,(char*)&val,&lval);
+#else
+    getsockopt(s->ipv6,IPPROTO_TCP,TCP_NODELAY,(char*)&val,&lval);
+#endif
+    return val;
+}
+
+oi_func int tcp_get_keepalive(socket_t * s) {
+    int val;
+    socklen_t lval = sizeof val;
+#if defined(OI_SINGLESTACK)
+    getsockopt(s->ipv6==_OI_SINVAL ? s->ipv4 : s->ipv6,
+                       SOL_SOCKET,SO_KEEPALIVE,(char*)&val,&lval);
+#else
+    getsockopt(s->ipv6,SOL_SOCKET,SO_KEEPALIVE,(char*)&val,&lval);
+#endif
+    return val;
+}
+
+#endif
