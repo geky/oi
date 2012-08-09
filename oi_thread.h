@@ -4,8 +4,8 @@
 #include "oi_os.h"
 #include "oi_types.h"
 
-
 #ifdef OI_WIN
+
 #include <process.h>
 
 typedef struct {
@@ -80,19 +80,14 @@ oi_call thread_create(thread_t * t, void (*r)(void*), void * a) {
 oi_call thread_sleep(unsigned int ms) {
     struct timespec time;
     struct timeval temp;
-    uint64 timems;
-
-    gettimeofday(&temp,0);
-    timems = temp.tv_sec;
-    timems *= 1000;
-    timems += (temp.tv_usec/1000);
-
-    timems += ms;
-    time.tv_nsec = (timems%1000) * 1000000;
-    time.tv_sec = timems / 1000;
-    
     pthread_mutex_t mutex;
     pthread_cond_t cond;
+
+    gettimeofday(&temp,0);
+    ms += (temp.tv_usec/1000);
+    time.tv_nsec = (ms%1000) * 1000000;
+    time.tv_sec = (ms/1000) + temp.tv_sec;
+    
     pthread_mutex_init(&mutex,0);
     pthread_cond_init(&cond,0);
     

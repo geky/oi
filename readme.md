@@ -17,17 +17,17 @@ OI starts with oi_os.h, which determines the OS information and is required in e
 
 The actual code is organized into many `oi_func` and `oi_call` functions. The oi_func functions can never fail in theory and returns data associated with the function. The oi_call functions return an int indicating any error that occurs, or zero if it is successful. You can get a string explaining the error through the get_error function in oi_err.h. Most errors are very much OS dependent and usually only result from bugs; however, reliable error codes are defined in oi_err.h and indicated in comments before the function.
 
-Each file usually revolves around a specific datatype which uses the `_t` syntax. The actual implementation changes on each system, making it difficult to use consistent datatypes. You should not rely on the type at all, but rather depend on the functions that use it.
+Each file usually revolves around a specific datatype which uses the `_t` syntax such as mutex_t. The actual implementation changes on each system, making it difficult to use consistent datatypes. You should not rely on the type at all, but rather depend on the functions that use it.
 
 Anything in the files that begins with `_oi` is intended only for internal use, and should not be used. That being said if you need something prefixed with `_oi`, feel free to change its name and submit a pull request to indicate its nescessity.
 
 ### Documentation  ###
 
-A full documentation of each file can be found in [docs.md](blob/master/docs.md).
+A full documentation of each file can be found in [docs.md](oi/blob/master/docs.md).
 
 ### Testing ###
 
-OI is trying to implement a standard interface for utilities that are common for applications on modern computers. This isn't C's main focus, so most of the implementations of these utilities vary widely from computer to computer. A simple program [test.c](blob/master/test.c) is provided for a quick way to confirm OI works on a target platform. However, it is impossible to cover every OS, so if you find an OS where OI breaks, please let us know, or even implement a fix yourself and submit a pull request.
+OI is trying to implement a standard interface for utilities that are common for applications on modern computers. This isn't C's main focus, so most of the implementations of these utilities vary widely from computer to computer. A simple program [test.c](oi/blob/master/test.c) is provided for a quick way to confirm OI works on a target platform. However, it is impossible to cover every OS, so if you find an OS where OI breaks, please let us know, or even implement a fix yourself and submit a pull request.
 
 ### Example ###
 

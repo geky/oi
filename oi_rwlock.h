@@ -1,9 +1,7 @@
-//requires -pthread on posix machines
-//Please note rwlocks are not recursive
+// requires -pthread on posix machines
 #ifndef OI_RWLOCK
 #define OI_RWLOCK 1
 #include "oi_os.h"
-#include "oi_types.h"
 
 #ifdef OI_WIN
 //use window's SRW for versions later than windows vista

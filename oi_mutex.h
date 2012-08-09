@@ -1,8 +1,7 @@
-//requires -pthread on posix machines
+// requires -pthread on posix machines
 #ifndef OI_MUTEX
 #define OI_MUTEX 1
 #include "oi_os.h"
-#include "oi_types.h"
 
 #ifdef OI_WIN
 

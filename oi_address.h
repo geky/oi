@@ -1,9 +1,9 @@
-// for windows use -lws2_32
+// requires -lws2_32 for windows
 #ifndef OI_ADDRESS
 #define OI_ADDRESS 1
 #include "oi_os.h"
-#include "oi_net.h"
 #include "oi_types.h"
+#include "oi_net.h"
 
 #if defined(OI_IPV4)
 #   define _OI_AFAMILY AF_INET
@@ -16,27 +16,11 @@
 #ifdef OI_WIN
 #define _OI_RGAI {_OI_NET_DEINIT; return err;}
 #else
-
-#ifndef _OI_EAI
-#if EAI_FAMILY < 0
-#   define _OI_EAI(n) (n)
-#else
-#   define _OI_EAI(n) (-n)
-#endif
-#endif
-
-#define _OI_RGAI { \
-        _OI_NET_DEINIT; \
-        switch(err) { \
-            case 0:             return 0; \
-            case EAI_MEMORY:    return ENOMEM; \
-            case EAI_AGAIN:     return EAGAIN; \
-            case EAI_BADFLAGS:  return EINVAL; \
-            case EAI_OVERFLOW:  return ENAMETOOLONG; \
-            case EAI_SYSTEM:    return errno; \
-            default:            return err; \
-        } \
-    }
+#   if EAI_FAMILY < 0
+#       define _OI_RGAI return err;
+#   else
+#       define _OI_RGAI return -err;
+#   endif
 #endif
 
 typedef union {

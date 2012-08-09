@@ -169,4 +169,3 @@ oi_func float64 unpackf64(void * b) {
 #endif
 
 #endif
-

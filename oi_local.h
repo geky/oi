@@ -1,8 +1,7 @@
-//requires -pthread on posix machines
+// requires -pthread on posix machines
 #ifndef OI_LOCAL
 #define OI_LOCAL 1
 #include "oi_os.h"
-#include "oi_types.h"
 
 #ifdef OI_WIN
 
@@ -45,7 +44,6 @@ oi_call local_set(local_t * i, void * val) {
 oi_func void * local_get(local_t * i) {
     return pthread_getspecific(*i);
 }
-
 
 #endif
 
