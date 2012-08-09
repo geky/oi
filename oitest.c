@@ -467,7 +467,7 @@ void testaddress() {
     size_t len,count;
     uint16 oport;
     char buff[2][41];
-    int time;
+    uint64 time;
 
     uint8 ta4[] = {8,8,8,8};
     uint8 ta6[] = {0x20,0x01,0x48,0x60,0x48,0x60,0,0,0,0,0,0,0,0,0x88,0x88};

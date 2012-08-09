@@ -20,7 +20,7 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
 #elif defined(OI_DUALSTACK)
         address_t map;
         _OI_SMAP(a,map)
-        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) _OI_SDIE(TCP,s);
+        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) _OI_SDIE(TIME,s);
         return 0;
 #else
         return _OI_SERR_NOS;
@@ -81,7 +81,7 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
         _OI_SUNBLOCK(s->ipv6);
         if (connect(s->ipv6, &map.raw, sizeof map.ipv6) &&
             _OI_NET_ERR != _OI_SERR_PROG) 
-                _OI_SDIE(TCP,s);
+                _OI_SDIE(TIME,s);
     
         FD_SET(s->ipv6,&fset);
         if (0 > select(s->ipv6+1, 0, &fset, 0, &time))
