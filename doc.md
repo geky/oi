@@ -48,7 +48,8 @@ oi_err contains the definitions of errors that can be relied upon during runtime
 
 #### Functions ####
 
-`const char * get_error(int err)` - returns a null-termintated system provided error message for any error code that an oi_call returns.
+`const char * get_error(int err)`  
+  returns a null-termintated system provided error message for any error code that an oi_call returns.
 
 [oi_types](oi/blob/master/oi_types.h)
 ---------------------------------------------
