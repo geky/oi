@@ -23,7 +23,7 @@ Anything in the files that begins with `_oi` is intended only for internal use, 
 
 ### Documentation  ###
 
-A full documentation of each file can be found in [docs.md](oi/blob/master/docs.md).
+A full documentation of each file can be found in [docs.md](oi/blob/master/doc.md).
 
 ### Testing ###
 

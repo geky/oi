@@ -35,7 +35,7 @@ oi_err contains error related code. It is not required for any file, but is usef
 
 #### Definitions ####
 
-oi_err contains the definitions of errors that can be relied upon during runtime. Other error codes should really only be used to debug a program and vary widely accross configurations. oi_err defines the following.
+oi_err contains the definitions of errors that can be relied upon during runtime. Other error codes should really only be used to debug a program and vary widely accross configurations.
 * ERR_IN_USE
 * ERR_TIMEOUT
 * ERR_NOT_FOUND
@@ -48,9 +48,7 @@ oi_err contains the definitions of errors that can be relied upon during runtime
 
 #### Functions ####
 
-oi_err also provides a useful debugging functions that returns a null-terminated system provided error message for any error code that an oi_call can return.
-`const char * get_error(int err)`
-
+`const char * get_error(int err)` - returns a null-termintated system provided error message for any error code that an oi_call returns.
 
 [oi_types](oi/blob/master/oi_types.h)
 ---------------------------------------------
