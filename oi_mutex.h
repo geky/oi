@@ -22,6 +22,7 @@ oi_call mutex_lock(mutex_t * m) {
     return 0;
 }
 
+// returns ERR_IN_USE on failure
 oi_call mutex_try_lock(mutex_t * m) {
     return TryEnterCriticalSection(m) ? 0 : ERROR_BUSY;
 }
@@ -52,6 +53,7 @@ oi_call mutex_lock(mutex_t * m) {
     return pthread_mutex_lock(m);
 }
 
+// returns ERR_IN_USE on failure
 oi_call mutex_try_lock(mutex_t * m) {
     return pthread_mutex_trylock(m);
 }

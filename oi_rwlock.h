@@ -23,6 +23,7 @@ oi_call rwlock_read_lock(rwlock_t * rw) {
     return 0;
 }
 
+// returns ERR_IN_USE on failure
 oi_call rwlock_try_read_lock(rwlock_t * rw) {
     return TryAcquireSRWLockShared(rw) ? 0 : ERROR_BUSY;
 }
@@ -37,6 +38,7 @@ oi_call rwlock_write_lock(rwlock_t * rw) {
     return 0;
 }
 
+// returns ERR_IN_USE on failure
 oi_call rwlock_try_write_lock(rwlock_t * rw) {
     return TryAcquireSRWLockExclusive(rw) ? 0 : ERROR_BUSY;
 }
@@ -78,6 +80,7 @@ oi_call rwlock_read_lock(rwlock_t * rw) {
     return 0;
 }
 
+// returns ERR_IN_USE on failure
 oi_call rwlock_try_read_lock(rwlock_t * rw) {
     if (!TryEnterCriticalSection(&rw->write_lock)) 
         return ERROR_BUSY;
@@ -107,6 +110,7 @@ oi_call rwlock_write_lock(rwlock_t * rw) {
     return 0;
 }
 
+// returns ERR_IN_USE on failure
 oi_call rwlock_try_write_lock(rwlock_t * rw) {
     if (!TryEnterCriticalSection(&rw->write_lock)) 
         return ERROR_BUSY;
@@ -144,6 +148,7 @@ oi_call rwlock_read_lock(rwlock_t * rw) {
     return pthread_rwlock_rdlock(rw);
 }
 
+// returns ERR_IN_USE on failure
 oi_call rwlock_try_read_lock(rwlock_t * rw) {
     return pthread_rwlock_tryrdlock(rw);
 }
@@ -156,6 +161,7 @@ oi_call rwlock_write_lock(rwlock_t * rw) {
     return pthread_rwlock_wrlock(rw);
 }
 
+// returns ERR_IN_USE on failure
 oi_call rwlock_try_write_lock(rwlock_t * rw) {
     return pthread_rwlock_trywrlock(rw);
 }

@@ -22,6 +22,7 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
     return SleepConditionVariableCS(c,m,INFINITE) ? GetLastError() : 0;
 }
 
+// returns ERR_TIMEOUT on timeout
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     return SleepConditionVariableCS(c,m,ms) ? GetLastError() : 0;
 }
@@ -82,6 +83,7 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
     }
 }
 
+// returns ERR_TIMEOUT on timeout
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     EnterCriticalSection(&c->lock);
     c->count++;
@@ -148,6 +150,7 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
     return pthread_cond_wait(c,m);
 }
 
+// returns ERR_TIMEOUT on timeout
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     struct timespec time;
     struct timeval temp;
