@@ -125,7 +125,7 @@ Runs the routine in a newly created thread and passes it the arg.
 `oi_call thread_create(thread_t * thread, void (*routine)(void *), void * arg)`
 * Runs the routine in a newly created thread and passes it the arg.
 
-`oi_call thread_create(thread_t * thread, void (*routine)(void *), void * arg)` 
+`oi_call thread_create(thread_t * thread, void (*routine)(void *), void * arg)`  
     * Runs the routine in a newly created thread and passes it the arg.
 
 
