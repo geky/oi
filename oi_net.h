@@ -1,5 +1,3 @@
-// requires -lws2_32 for windows
-
 // you may define
 //    OI_IPV4_ONLY
 //    OI_IPV6_ONLY

@@ -43,9 +43,12 @@ oi_call address_from_ipv6(address_t * a, void * ip, uint16 port) {
     a->ipv6.sin6_family = AF_INET6;
     a->ipv6.sin6_port = htons(port);
     if (ip) a->ipv6.sin6_addr = *(struct in6_addr*)ip;
+    else memset(&a->ipv6.sin6_addr,0,16);
     return 0;
 }
 
+// Returns ERR_NOT_FOUND if name is not found
+// Returns ERR_NO_DATA if name is found but has no data associated with it
 oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup) {
     struct addrinfo hint, *res;
     int err;
@@ -64,6 +67,8 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     return 0;
 }
 
+// Returns ERR_NOT_FOUND if name is not found
+// Returns ERR_NO_DATA if name is found but has no data associated with it
 oi_call address_all_from_name(address_t * a, size_t * len, const char * s, uint16 port, int lookup) {
     size_t t=0;
     struct addrinfo hint, *res, *hit;

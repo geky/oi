@@ -74,6 +74,7 @@ oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
     return 0;
 }
 
+// returns ERR_TIMEOUT on timeout
 oi_call udp_timed_rec(socket_t * s, void * buf, size_t * len, address_t * na, unsigned int ms) {
     size_t na_s = sizeof(address_t);
     address_t dump;

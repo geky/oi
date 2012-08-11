@@ -12,6 +12,7 @@ typedef SOCKET _oi_sock;
 #   define _OI_SERR_TIME ERROR_TIMEOUT
 #   define _OI_SERR_PROG WSAEWOULDBLOCK
 #   define _OI_SERR_CONN WSAEISCONN
+#   define _OI_SERR_DISC WSAECONNRESET
 #   define _OI_TIME_ERR (_OI_NET_ERR==WSAETIMEDOUT?_OI_SERR_TIME:_OI_NET_ERR)
 #   define _OI_SINVAL INVALID_SOCKET
 #   define _OI_SCLOSE(sock) closesocket(sock)
@@ -31,6 +32,7 @@ typedef signed int _oi_sock;
 #   define _OI_SERR_TIME ETIMEDOUT
 #   define _OI_SERR_PROG EINPROGRESS
 #   define _OI_SERR_CONN EISCONN
+#   define _OI_SERR_DISC ECONNRESET
 #   define _OI_TIME_ERR _OI_NET_ERR
 #   define _OI_SINVAL -1
 #   define _OI_SCLOSE(sock) close(sock)
@@ -129,6 +131,8 @@ oi_call socket_destroy(socket_t * s) {
     return iserr ? _OI_NET_ERR : 0;
 }
 
+
+// returns ERR_TAKEN if port is bound by another socket
 oi_call socket_create(socket_t * s, int proto, uint16 port) {
     address_t temp;
     _OI_NET_INIT;
@@ -164,6 +168,7 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
     return 0;
 }
 
+// returns ERR_TAKEN if port is bound by another socket
 oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
     if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)

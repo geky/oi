@@ -7,7 +7,11 @@
 #include "oi_address.h"
 #include "oi_socket.h"
 
-oi_call tcp_connect(socket_t * s, address_t * a) {
+// returns ERR_REFUSED if the reciever does not accept the connection.
+// returns ERR_UNREACHABLE_HOST if the end computer is not reachable.
+// returns ERR_UNREACHABLE_NET if the network containing the end computer is not reachable.
+// returns ERR_TIMEOUT if the connection times out
+oi_call tcp_connect(socket_t * s, address_t * a) {    
     if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
         if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(TIME,s);
@@ -42,6 +46,10 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
     }
 }
 
+// returns ERR_REFUSED if the reciever does not accept the connection.
+// returns ERR_UNREACHABLE_HOST if the end computer is not reachable.
+// returns ERR_UNREACHABLE_NET if the network containing the end computer is not reachable.
+// returns ERR_TIMEOUT if the connection times out
 oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
     fd_set fset;
     struct timeval time;
@@ -196,6 +204,7 @@ oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
 #endif
 }
 
+// returns ERR_TIMEOUT if the connection times out
 oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned int ms) {
     size_t na_s = sizeof(address_t);
     address_t dump;
@@ -261,6 +270,8 @@ oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned i
     return _OI_NET_ERR;
 }
 
+// returns ERR_DISCONNECTED if the socket is disconnected.
+// returns ERR_TIMEOUT if the connection times out.
 oi_call tcp_send(socket_t * s, void * buf, size_t * len) {
     size_t sendlen = *len;
     int newlen;
@@ -277,6 +288,8 @@ oi_call tcp_send(socket_t * s, void * buf, size_t * len) {
     return 0;
 }
 
+// returns ERR_DISCONNECTED if the socket is disconnected.
+// returns ERR_TIMEOUT if the connection times out.
 oi_call tcp_rec(socket_t * s, void * buf, size_t * len) {
     int newlen = *len;
     *len = 0;
@@ -286,10 +299,13 @@ oi_call tcp_rec(socket_t * s, void * buf, size_t * len) {
     newlen = recv(s->ipv6,buf,newlen,0);
 #endif
     if (newlen < 0) return _OI_TIME_ERR; 
+    if (newlen == 0) return _OI_SERR_DISC;
     *len = newlen; 
     return 0;
 }
 
+// returns ERR_DISCONNECTED if the socket is disconnected.
+// returns ERR_TIMEOUT if the connection times out.
 oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
     int newlen = *len;
     fd_set fset;
@@ -313,6 +329,7 @@ oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
     if (FD_ISSET(sock,&fset)) {
         newlen = recv(sock, buf, newlen, 0);
         if (newlen < 0) return _OI_NET_ERR;
+        if (newlen == 0) return _OI_SERR_DISC;
         *len = newlen; 
         return 0;
     } return _OI_SERR_TIME;
