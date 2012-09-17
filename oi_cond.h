@@ -2,7 +2,6 @@
 #ifndef OI_COND
 #define OI_COND 1
 #include "oi_os.h"
-#include "oi_types.h"
 #include "oi_mutex.h"
 
 #ifdef OI_WIN
@@ -23,6 +22,7 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
     return SleepConditionVariableCS(c,m,INFINITE) ? GetLastError() : 0;
 }
 
+// returns ERR_TIMEOUT on timeout
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     return SleepConditionVariableCS(c,m,ms) ? GetLastError() : 0;
 }
@@ -83,6 +83,7 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
     }
 }
 
+// returns ERR_TIMEOUT on timeout
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     EnterCriticalSection(&c->lock);
     c->count++;
@@ -129,10 +130,11 @@ oi_call cond_signal_all(cond_t * c) {
     return 0;
 }
 
-
 #endif
 
 #else
+
+#include <sys/time.h>
 
 typedef pthread_cond_t cond_t;
 
@@ -148,15 +150,15 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
     return pthread_cond_wait(c,m);
 }
 
+// returns ERR_TIMEOUT on timeout
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     struct timespec time;
     struct timeval temp;
+    
     gettimeofday(&temp,0);
-    uint64 timems = temp.tv_sec;
-    timems *= 1000;
-    timems += (temp.tv_usec/1000) + ms;
-    time.tv_nsec = (timems%1000) * 1000000;
-    time.tv_sec = timems / 1000;
+    ms += (temp.tv_usec/1000);
+    time.tv_nsec = (ms%1000) * 1000000;
+    time.tv_sec = (ms/1000) + temp.tv_sec;
        
     return pthread_cond_timedwait(c,m,&time);
 }
@@ -172,4 +174,3 @@ oi_call cond_signal_all(cond_t * c) {
 #endif
 
 #endif
-

@@ -1,3 +1,4 @@
+// requires -lws2_32 for windows
 #ifndef OI_SOCKET
 #define OI_SOCKET 1
 #include "oi_os.h"
@@ -5,13 +6,13 @@
 #include "oi_net.h"
 #include "oi_address.h"
 
-
 #ifdef OI_WIN
 typedef SOCKET _oi_sock;
 #   define _OI_SERR_NOS WSAEAFNOSUPPORT
 #   define _OI_SERR_TIME ERROR_TIMEOUT
 #   define _OI_SERR_PROG WSAEWOULDBLOCK
 #   define _OI_SERR_CONN WSAEISCONN
+#   define _OI_SERR_DISC WSAECONNRESET
 #   define _OI_TIME_ERR (_OI_NET_ERR==WSAETIMEDOUT?_OI_SERR_TIME:_OI_NET_ERR)
 #   define _OI_SINVAL INVALID_SOCKET
 #   define _OI_SCLOSE(sock) closesocket(sock)
@@ -31,6 +32,7 @@ typedef signed int _oi_sock;
 #   define _OI_SERR_TIME ETIMEDOUT
 #   define _OI_SERR_PROG EINPROGRESS
 #   define _OI_SERR_CONN EISCONN
+#   define _OI_SERR_DISC ECONNRESET
 #   define _OI_TIME_ERR _OI_NET_ERR
 #   define _OI_SINVAL -1
 #   define _OI_SCLOSE(sock) close(sock)
@@ -88,7 +90,6 @@ typedef union {
 } socket_t;
 #endif
 
-oi_call socket_destroy(socket_t * s);
 #define _OI_SDIE(rr,ss) {int ee=_OI_##rr##_ERR; socket_destroy(ss); return ee;}
 #define _OI_SMAP(addr,map) \
     memset(&map,0,sizeof map); \
@@ -114,6 +115,24 @@ oi_call socket_destroy(socket_t * s);
     }
 
 
+oi_call socket_destroy(socket_t * s) {
+    int iserr = 0;
+#if defined(OI_SINGLESTACK)
+    if (s->ipv4 != _OI_SINVAL) {
+        iserr |= _OI_SCLOSE(s->ipv4);
+        s->ipv4 = _OI_SINVAL;
+    }
+#endif
+    if (s->ipv6 != _OI_SINVAL) {
+        iserr |= _OI_SCLOSE(s->ipv6);
+        s->ipv6 = _OI_SINVAL;
+    }
+    _OI_NET_DEINIT;
+    return iserr ? _OI_NET_ERR : 0;
+}
+
+
+// returns ERR_TAKEN if port is bound by another socket
 oi_call socket_create(socket_t * s, int proto, uint16 port) {
     address_t temp;
     _OI_NET_INIT;
@@ -149,6 +168,7 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
     return 0;
 }
 
+// returns ERR_TAKEN if port is bound by another socket
 oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
     if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
@@ -192,22 +212,6 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
 #endif
     }
     return 0;
-}
-
-oi_call socket_destroy(socket_t * s) {
-    int iserr = 0;
-#if defined(OI_SINGLESTACK)
-    if (s->ipv4 != _OI_SINVAL) {
-        iserr |= _OI_SCLOSE(s->ipv4);
-        s->ipv4 = _OI_SINVAL;
-    }
-#endif
-    if (s->ipv6 != _OI_SINVAL) {
-        iserr |= _OI_SCLOSE(s->ipv6);
-        s->ipv6 = _OI_SINVAL;
-    }
-    _OI_NET_DEINIT;
-    return iserr ? _OI_NET_ERR : 0;
 }
 
 oi_call socket_set_send_buffer(socket_t * s, size_t len) {
@@ -259,4 +263,3 @@ oi_func size_t socket_get_rec_buffer(socket_t * s) {
 }
 
 #endif
-

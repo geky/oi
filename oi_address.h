@@ -1,9 +1,9 @@
-// for windows use -lws2_32
+// requires -lws2_32 for windows
 #ifndef OI_ADDRESS
 #define OI_ADDRESS 1
 #include "oi_os.h"
-#include "oi_net.h"
 #include "oi_types.h"
+#include "oi_net.h"
 
 #if defined(OI_IPV4)
 #   define _OI_AFAMILY AF_INET
@@ -16,27 +16,11 @@
 #ifdef OI_WIN
 #define _OI_RGAI {_OI_NET_DEINIT; return err;}
 #else
-
-#ifndef _OI_EAI
-#if EAI_FAMILY < 0
-#   define _OI_EAI(n) (n)
-#else
-#   define _OI_EAI(n) (-n)
-#endif
-#endif
-
-#define _OI_RGAI { \
-        _OI_NET_DEINIT; \
-        switch(err) { \
-            case 0:             return 0; \
-            case EAI_MEMORY:    return ENOMEM; \
-            case EAI_AGAIN:     return EAGAIN; \
-            case EAI_BADFLAGS:  return EINVAL; \
-            case EAI_OVERFLOW:  return ENAMETOOLONG; \
-            case EAI_SYSTEM:    return errno; \
-            default:            return err; \
-        } \
-    }
+#   if EAI_FAMILY < 0
+#       define _OI_RGAI return err;
+#   else
+#       define _OI_RGAI return -err;
+#   endif
 #endif
 
 typedef union {
@@ -59,9 +43,12 @@ oi_call address_from_ipv6(address_t * a, void * ip, uint16 port) {
     a->ipv6.sin6_family = AF_INET6;
     a->ipv6.sin6_port = htons(port);
     if (ip) a->ipv6.sin6_addr = *(struct in6_addr*)ip;
+    else memset(&a->ipv6.sin6_addr,0,16);
     return 0;
 }
 
+// Returns ERR_NOT_FOUND if name is not found
+// Returns ERR_NO_DATA if name is found but has no data associated with it
 oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup) {
     struct addrinfo hint, *res;
     int err;
@@ -80,6 +67,8 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     return 0;
 }
 
+// Returns ERR_NOT_FOUND if name is not found
+// Returns ERR_NO_DATA if name is found but has no data associated with it
 oi_call address_all_from_name(address_t * a, size_t * len, const char * s, uint16 port, int lookup) {
     size_t t=0;
     struct addrinfo hint, *res, *hit;

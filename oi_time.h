@@ -1,4 +1,3 @@
-//requires -pthread on posix machines
 #ifndef OI_TIME
 #define OI_TIME 1
 #include "oi_os.h"
@@ -8,7 +7,7 @@
 
 oi_func uint64 millis(void) {
     FILETIME temp;
-	uint64 ret;
+    uint64 ret;
     GetSystemTimeAsFileTime(&temp);
     ret = temp.dwHighDateTime;
     ret <<= 32;
@@ -34,4 +33,3 @@ oi_func uint64 millis(void) {
 #endif
 
 #endif
-

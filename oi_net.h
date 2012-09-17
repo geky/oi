@@ -1,13 +1,12 @@
-//you may define
-// OI_IPV4_ONLY
-// OI_IPV6_ONLY
-// OI_DUALSTACK
-// OI_SINGLESTACK
+// you may define
+//    OI_IPV4_ONLY
+//    OI_IPV6_ONLY
+//    OI_DUALSTACK
+//    OI_SINGLESTACK
+// to control address IP version
 #ifndef OI_NET
 #define OI_NET 1
-
 #include "oi_os.h"
-#include <string.h>
 
 #ifdef OI_MSVC
 #   pragma comment(lib,"ws2_32.lib")
@@ -16,6 +15,7 @@
 #ifdef OI_WIN
 #   include <winsock2.h>
 #   include <ws2tcpip.h>
+#   include <string.h>
 #
 #   if WINVER >= 0x0600 && !defined(IPV6_V6ONLY)
 #       define IPV6_V6ONLY 27
@@ -36,11 +36,13 @@
 #
 #   include <unistd.h>
 #   include <netinet/in.h>
+#   include <netinet/tcp.h>
 #   include <arpa/inet.h>
 #   include <sys/types.h>
 #   include <sys/socket.h>
 #   include <netdb.h>
 #   include <fcntl.h>
+#   include <string.h>
 #   include <errno.h>
 #
 #   define _OI_NET_INIT
