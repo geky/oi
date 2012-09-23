@@ -239,7 +239,7 @@ oi_call socket_set_rec_buffer(socket_t * s, size_t len) {
 }
 
 oi_func size_t socket_get_send_buffer(socket_t * s) {
-    size_t len;
+    size_t len = 0;
     socklen_t llen = sizeof len;
 #if defined(OI_SINGLESTACK)
     getsockopt(s->ipv6==_OI_SINVAL ? s->ipv4 : s->ipv6,
@@ -251,7 +251,7 @@ oi_func size_t socket_get_send_buffer(socket_t * s) {
 }
 
 oi_func size_t socket_get_rec_buffer(socket_t * s) {
-    size_t len;
+    size_t len = 0;
     socklen_t llen = sizeof len;
 #if defined(OI_SINGLESTACK)
     getsockopt(s->ipv6==_OI_SINVAL ? s->ipv4 : s->ipv6,

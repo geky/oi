@@ -338,11 +338,11 @@ oi_call tcp_timed_rec(socket_t * s, void * buf, size_t * len, unsigned int ms) {
 oi_call tcp_set_nodelay(socket_t * s, int val) {
 #if defined(OI_SINGLESTACK)    
     if (s->ipv4!=_OI_SINVAL && setsockopt(s->ipv4,
-                           IPPROTO_TCP,SO_SNDBUF,(char*)&val,sizeof val))
+                           IPPROTO_TCP,TCP_NODELAY,(char*)&val,sizeof val))
         return _OI_NET_ERR;
 #endif
     if (s->ipv6!=_OI_SINVAL && setsockopt(s->ipv6,
-                           IPPROTO_TCP,SO_SNDBUF,(char*)&val,sizeof val))
+                           IPPROTO_TCP,TCP_NODELAY,(char*)&val,sizeof val))
         return _OI_NET_ERR;
     return 0;
 }
@@ -360,7 +360,7 @@ oi_call tcp_set_keepalive(socket_t * s, int val) {
 }
 
 oi_func int tcp_get_nodelay(socket_t * s) {
-    int val;
+    int val = 0;
     socklen_t lval = sizeof val;
 #if defined(OI_SINGLESTACK)
     getsockopt(s->ipv6==_OI_SINVAL ? s->ipv4 : s->ipv6,
@@ -372,7 +372,7 @@ oi_func int tcp_get_nodelay(socket_t * s) {
 }
 
 oi_func int tcp_get_keepalive(socket_t * s) {
-    int val;
+    int val = 0;
     socklen_t lval = sizeof val;
 #if defined(OI_SINGLESTACK)
     getsockopt(s->ipv6==_OI_SINVAL ? s->ipv4 : s->ipv6,

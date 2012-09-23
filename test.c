@@ -559,10 +559,14 @@ void testsocket() {
     PRINT("send_buff", "\n", "get -> %d", err);
     err = socket_set_send_buffer(&s0,32);
     PRINT("", TEST(!err), "set (32) err %d", err);
+    err = socket_get_send_buffer(&s0);
+    PRINT("send_buff", "\n", "get -> %d", err);
     err = socket_get_rec_buffer(&s0);
     PRINT("rec_buff", "\n", "get -> %d", err);
     err = socket_set_rec_buffer(&s0,32);
     PRINT("", TEST(!err), "set (32) err %d", err);
+    err = socket_get_rec_buffer(&s0);
+    PRINT("rec_buff", "\n", "get -> %d", err);
     printf("\n");
    
     err = socket_destroy(&s0);
@@ -716,10 +720,14 @@ void testtcp() {
     PRINT("keepalive", "\n", "get -> %d", err);
     err = tcp_set_keepalive(&s1,1);
     PRINT("", TEST(!err), "set (1) err %d", err);
+    err = tcp_get_keepalive(&s1);
+    PRINT("keepalive", "\n", "get -> %d", err);
     err = tcp_get_nodelay(&s2);
     PRINT("nodelay", "\n", "get -> %d", err);
     err = tcp_set_nodelay(&s2,1);
     PRINT("", TEST(!err), "set (1) err %d", err);
+    err = tcp_get_nodelay(&s2);
+    PRINT("nodelay", "\n", "get -> %d", err);
     printf("\n");
 
     thread_create(&tt,&testtcpthread,&s0);
