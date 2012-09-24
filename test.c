@@ -197,7 +197,7 @@ void testthreadthread(void * a) {
     PRINT("", TEST(!err), "thread %d yielding err %d", a, err);
     PRINT("sleep", "\n", "thread %d thread_sleep(100)", a);
     err = thread_sleep(1000);
-    PRINT("", TEST(((int)a) == 2), "thread %d not terminated", a);
+    PRINT("", TEST(a == (void*)2), "thread %d not terminated", a);
     PRINT("", TEST(!err), "thread %d thread_sleep err %d", a, err);
 }
 
