@@ -1,0 +1,26 @@
+test.c:4:20: error: malloc.h: No such file or directory
+test.c: In function ‘testthreadthread’:
+test.c:194: warning: cast from pointer to integer of different size
+test.c:196: warning: cast from pointer to integer of different size
+test.c:198: warning: cast from pointer to integer of different size
+test.c:199: warning: cast from pointer to integer of different size
+test.c:201: warning: cast from pointer to integer of different size
+test.c:201: warning: cast from pointer to integer of different size
+test.c:202: warning: cast from pointer to integer of different size
+test.c: In function ‘testlocalthread’:
+test.c:231: warning: cast from pointer to integer of different size
+test.c: In function ‘testlocal’:
+test.c:245: warning: cast from pointer to integer of different size
+test.c:251: warning: cast from pointer to integer of different size
+test.c: In function ‘testcondthread’:
+test.c:375: warning: cast from pointer to integer of different size
+In file included from test.c:580:
+oi_udp.h: In function ‘udp_rec’:
+oi_udp.h:67: warning: passing argument 6 of ‘recvfrom’ from incompatible pointer type
+oi_udp.h: In function ‘udp_timed_rec’:
+oi_udp.h:112: warning: passing argument 6 of ‘recvfrom’ from incompatible pointer type
+In file included from test.c:654:
+oi_tcp.h: In function ‘tcp_accept’:
+oi_tcp.h:195: warning: passing argument 3 of ‘accept’ from incompatible pointer type
+oi_tcp.h: In function ‘tcp_timed_accept’:
+oi_tcp.h:250: warning: passing argument 3 of ‘accept’ from incompatible pointer type
