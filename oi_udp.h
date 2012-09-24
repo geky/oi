@@ -40,7 +40,7 @@ oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
 }
 
 oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
-    size_t na_s = sizeof(address_t);
+    socklen_t na_s = sizeof(address_t);
     address_t dump;
     int newlen = *len;
     *len = 0;
@@ -76,7 +76,7 @@ oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
 
 // returns ERR_TIMEOUT on timeout
 oi_call udp_select_rec(socket_t * dst, void * buf, size_t * len, address_t * na, unsigned int ms, int num, ...) {
-    size_t na_s = sizeof(address_t);
+    socklen_t na_s = sizeof(address_t);
     address_t dump;
     int newlen = *len;
     va_list vlst;
