@@ -140,7 +140,7 @@ oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
 }
 
 oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
-    size_t na_s = sizeof(address_t);
+    socklen_t na_s = sizeof(address_t);
     address_t dump;
     
 #if defined(OI_SINGLESTACK)    
@@ -206,7 +206,7 @@ oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
 
 // returns ERR_TIMEOUT if the connection times out
 oi_call tcp_timed_accept(socket_t * s, socket_t * ns, address_t * na, unsigned int ms) {
-    size_t na_s = sizeof(address_t);
+    socklen_t na_s = sizeof(address_t);
     address_t dump;
     fd_set fset;
     struct timeval time;

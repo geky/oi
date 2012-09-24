@@ -1,7 +1,6 @@
 #include "oi_os.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <string.h>
 #include <stdarg.h>
 
@@ -191,15 +190,15 @@ void testpack() {
 #include "oi_thread.h"
 void testthreadthread(void * a) {
     int err;
-    PRINT("", "\n", "I am thread %d", (int)a);
+    PRINT("", "\n", "I am thread %d", a);
     
-    PRINT("yield", "\n", "thread %d yielding", (int)a);
+    PRINT("yield", "\n", "thread %d yielding", a);
     err = thread_yield();
-    PRINT("", TEST(!err), "thread %d yielding err %d", (int)a, err);
-    PRINT("sleep", "\n", "thread %d thread_sleep(100)", (int)a);
+    PRINT("", TEST(!err), "thread %d yielding err %d", a, err);
+    PRINT("sleep", "\n", "thread %d thread_sleep(100)", a);
     err = thread_sleep(1000);
-    PRINT("", TEST(((int)a) == 2), "thread %d not terminated", (int)a);
-    PRINT("", TEST(!err), "thread %d thread_sleep err %d", (int)a, err);
+    PRINT("", TEST(((int)a) == 2), "thread %d not terminated", a);
+    PRINT("", TEST(!err), "thread %d thread_sleep err %d", a, err);
 }
 
 void testthread() {
@@ -224,32 +223,34 @@ void testthread() {
 void testlocalthread(void * p) {
     local_t * lp = (local_t*)p;
     int err;
-    int temp;
+    void * temp;
+    void * test = (void*)2;
     
-    err = local_set(lp,(void*)2);
-    PRINT("set", "\n", "setting value to 2");
-    temp = (int)local_get(lp);
-    PRINT("get", TEST(temp == 2), "thread 2 value is %d", temp);
+    err = local_set(lp, test);
+    PRINT("set", "\n", "setting value to %d", test);
+    temp = local_get(lp);
+    PRINT("get", TEST(temp == test), "thread 2 value is %d", temp);
 }
 
 void testlocal() {
     local_t l;
     thread_t t;
     int err;
-    int temp;
+    void * test = (void*)1;
+    void * temp;
     
     err = local_create(&l);
     PRINT("create", TEST(!err), "creating local err %d", err);
-    err = local_set(&l,(void*)1);
-    PRINT("set", "\n", "setting value to 1");
-    temp = (int)local_get(&l);
-    PRINT("get", TEST(temp == 1), "thread 1 value is %d", temp);
+    err = local_set(&l, test);
+    PRINT("set", "\n", "setting value to %d", test);
+    temp = local_get(&l);
+    PRINT("get", TEST(temp == test), "thread 1 value is %d", temp);
     
     thread_create(&t,&testlocalthread,&l);
     thread_join(&t);
     
-    temp = (int)local_get(&l);
-    PRINT("get", TEST(temp == 1), "thread 1 value is %d", temp);
+    temp = local_get(&l);
+    PRINT("get", TEST(temp == test), "thread 1 value is %d", temp);
     err = local_create(&l);
     PRINT("destroy", TEST(!err), "destroying local err %d", err);
 }
@@ -372,7 +373,7 @@ void testcondthread(void * timed) {
         PRINT("", TEST(condcount <= condmax), "total signals = %d", condcount);
     }
     
-    PRINT("", TEST((int)timed?err==ERR_TIMEOUT:!err), "woken thread err %d", err);
+    PRINT("", TEST(timed?err==ERR_TIMEOUT:!err), "woken thread err %d", err);
     mutex_unlock(condpm);
 }
 
