@@ -75,50 +75,76 @@ oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
 }
 
 // returns ERR_TIMEOUT on timeout
-oi_call udp_select_rec(socket_t * dst, void * buf, size_t * len, address_t * na, unsigned int ms, int num, ...) {
+oi_call udp_select_rec(socket_t ** res, void * buf, size_t * len, address_t * na, unsigned int ms, int num, ...) {
     socklen_t na_s = sizeof(address_t);
     address_t dump;
     int newlen = *len;
+    socket_t * next;
+
     va_list vlst;
     fd_set fset;
     struct timeval time;
+    struct timeval * timept = 0;
     _oi_sock max = 0;
+    int i;
 
+    if (res) *res = 0;
     *len = 0;
-    va_start(vlst,&num);
     FD_ZERO(&fset);
-    time.tv_usec = (ms%1000)*1000;
-    time.tv_sec = (ms/1000);
+    if (ms) { 
+        time.tv_usec = (ms%1000)*1000;
+        time.tv_sec = (ms/1000);
+        timept = &time;
+    }
 
-    while (num--) {
+    va_start(vlst, num);
+    for (i=0; i<num; i++) {
 #if defined(OI_SINGLESTACK) 
-        socket_t * next = va_arg(vlst, socket_t*);
+        next = va_arg(vlst, socket_t*);
         
         if (next->ipv4 != _OI_SINVAL) {
-            FD_SET(s->ipv4, &fset);
+            FD_SET(next->ipv4, &fset);
             if (next->ipv4 > max) max = next->ipv4;
         }
 #endif
         if (next->ipv6 != _OI_SINVAL) {
-            FD_SET(s->ipv6,&fset);
+            FD_SET(next->ipv6,&fset);
             if (next->ipv6 > max) max = next->ipv6;
         }
     }
-    
-    if (0 > select(max+1, &fset, 0, 0, &time))
+    va_end(vlst);
+
+    if (0 > select(max+1, &fset, 0, 0, timept))
         return _OI_NET_ERR;
-        //TODO below heres
-    if (FD_ISSET(s->ipv6,&fset)) {
-        newlen = recvfrom(s->ipv6, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
+
+    va_start(vlst, num);
+    for (i=0; i<num; i++) {
+        next = va_arg(vlst, socket_t*);
+
+        if (FD_ISSET(next->ipv6,&fset)) {
+            next = va_arg(vlst, socket_t*);
+
+            newlen = recvfrom(next->ipv6, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
+            if (newlen < 0) return _OI_NET_ERR;
+            if (res) *res = next;
+            *len = newlen;
+            return 0;
+
 #if defined(OI_SINGLESTACK)
-    } else if (FD_ISSET(s->ipv4,&fset)) {
-        newlen = recvfrom(s->ipv4, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
+        } else if (FD_ISSET(next->ipv4,&fset)) {
+            next = va_arg(vlst, socket_t*);
+
+            newlen = recvfrom(next->ipv4, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
+            if (newlen < 0) return _OI_NET_ERR;
+            if (res) *res = next;
+            *len = newlen;
+            return 0;
 #endif
-    } else return _OI_SERR_TIME;
-    
-    if (newlen < 0) return _OI_NET_ERR;
-    *len = newlen; 
-    return 0;
+        }
+    }
+    va_end(vlst);
+
+    return _OI_SERR_TIME;
 }
 
 #endif
