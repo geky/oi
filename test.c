@@ -596,7 +596,7 @@ void testudpthread(void * vs) {
     PRINT("udp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
     
     err = udp_select_rec(0,msg,&len,&a,0,3,&s[0],&s[1],&s[2]);
-    PRINT("udp_rec", TEST(!err && !strcmp(msg,"hello 2")), "svr time rec [%s] len %d err %d", msg, len, err);
+    PRINT("udp_rec", TEST(!err && !strcmp(msg,"hello 2")), "svr sele rec [%s] len %d err %d", msg, len, err);
     
     strcpy(msg,"bye 2");
     len = 10;
@@ -604,7 +604,7 @@ void testudpthread(void * vs) {
     PRINT("udp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
 
     err = udp_select_rec(&out,msg,&len,&a,100,3,&s[0],&s[1],&s[2]);
-    PRINT("udp_rec", TEST(err==ERR_TIMEOUT && len==0 && out==0), "server timed rec len %d err %d", len, err);
+    PRINT("udp_rec", TEST(err==ERR_TIMEOUT && len==0 && out==0), "server select rec len %d err %d", len, err);
 }
 
 void testudp() {

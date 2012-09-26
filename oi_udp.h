@@ -83,8 +83,7 @@ oi_call udp_select_rec(socket_t ** res, void * buf, size_t * len, address_t * na
 
     va_list vlst;
     fd_set fset;
-    struct timeval time;
-    struct timeval * timept = 0;
+    struct timeval time, *timept=0;
     _oi_sock max = 0;
     int i;
 
@@ -96,12 +95,11 @@ oi_call udp_select_rec(socket_t ** res, void * buf, size_t * len, address_t * na
         time.tv_sec = (ms/1000);
         timept = &time;
     }
-
+    
     va_start(vlst, num);
     for (i=0; i<num; i++) {
-#if defined(OI_SINGLESTACK) 
         next = va_arg(vlst, socket_t*);
-        
+#if defined(OI_SINGLESTACK) 
         if (next->ipv4 != _OI_SINVAL) {
             FD_SET(next->ipv4, &fset);
             if (next->ipv4 > max) max = next->ipv4;
@@ -116,13 +114,13 @@ oi_call udp_select_rec(socket_t ** res, void * buf, size_t * len, address_t * na
 
     if (0 > select(max+1, &fset, 0, 0, timept))
         return _OI_NET_ERR;
-
+    
     va_start(vlst, num);
     for (i=0; i<num; i++) {
         next = va_arg(vlst, socket_t*);
 
         if (FD_ISSET(next->ipv6,&fset)) {
-            next = va_arg(vlst, socket_t*);
+            va_end(vlst);
 
             newlen = recvfrom(next->ipv6, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
             if (newlen < 0) return _OI_NET_ERR;
@@ -132,7 +130,7 @@ oi_call udp_select_rec(socket_t ** res, void * buf, size_t * len, address_t * na
 
 #if defined(OI_SINGLESTACK)
         } else if (FD_ISSET(next->ipv4,&fset)) {
-            next = va_arg(vlst, socket_t*);
+            va_end(vlst);
 
             newlen = recvfrom(next->ipv4, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
             if (newlen < 0) return _OI_NET_ERR;
