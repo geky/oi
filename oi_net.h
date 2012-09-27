@@ -8,6 +8,9 @@
 #define OI_NET 1
 #include "oi_os.h"
 
+#include <string.h>
+#include <stdarg.h>
+
 #ifdef OI_MSVC
 #   pragma comment(lib,"ws2_32.lib")
 #endif
@@ -15,7 +18,6 @@
 #ifdef OI_WIN
 #   include <winsock2.h>
 #   include <ws2tcpip.h>
-#   include <string.h>
 #
 #   if WINVER >= 0x0600 && !defined(IPV6_V6ONLY)
 #       define IPV6_V6ONLY 27
@@ -42,7 +44,6 @@
 #   include <sys/socket.h>
 #   include <netdb.h>
 #   include <fcntl.h>
-#   include <string.h>
 #   include <errno.h>
 #
 #   define _OI_NET_INIT

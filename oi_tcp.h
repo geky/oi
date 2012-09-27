@@ -50,7 +50,7 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
 // returns ERR_UNREACHABLE_HOST if the end computer is not reachable.
 // returns ERR_UNREACHABLE_NET if the network containing the end computer is not reachable.
 // returns ERR_TIMEOUT if the connection times out
-oi_call tcp_timed_connect(socket_t * s, address_t * a, unsigned int ms) {
+oi_call tcp_select_connect(socket_t ** res, address_t * a, unsigned int ms, int num, ...) {
     fd_set fset;
     struct timeval time;
 
