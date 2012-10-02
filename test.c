@@ -584,7 +584,7 @@ void testudpthread(void * vs) {
     size_t len = 10;
     char msg[10];
     address_t a;
-    socket_t * s = vs;
+    socket_t * s = (socket_t*)vs;
     socket_t * out;
     
     err = udp_rec(&s[0],msg,&len,&a);
@@ -595,15 +595,15 @@ void testudpthread(void * vs) {
     err = udp_send(&s[0],msg,&len,&a);
     PRINT("udp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
     
-    err = udp_rec_any(0,msg,&len,&a,0,3,&s[0],&s[1],&s[2]);
+    err = udp_rec_any(0,msg,&len,&a,0,3,&s[0],&s[3],&s[4]);
     PRINT("udp_rec", TEST(!err && !strcmp(msg,"hello 2")), "svr rec any  [%s] len %d err %d", msg, len, err);
-    
+
     strcpy(msg,"bye 2");
     len = 10;
     err = udp_send(&s[0],msg,&len,&a);
     PRINT("udp_send", TEST(!err), "server reply [%s] len %d err %d", msg, len, err);
 
-    err = udp_rec_any(&out,msg,&len,&a,100,3,&s[0],&s[1],&s[2]);
+    err = udp_rec_any(&out,msg,&len,&a,100,3,&s[0],&s[3],&s[4]);
     PRINT("udp_rec", TEST(err==ERR_TIMEOUT && len==0 && out==0), "server rec any len %d err %d", len, err);
 }
 
@@ -612,7 +612,7 @@ void testudp() {
     size_t len = 10;
     char msg[10] = "hello 1";
     address_t temp;
-    socket_t s[3];
+    socket_t s[5];
     thread_t tt;
 
     err = socket_create(&s[0],SOCKET_UDP,12345);
@@ -622,7 +622,9 @@ void testudp() {
     err = socket_create_on(&s[1],SOCKET_UDP,&temp);
     PRINT("", TEST(!err), "creating udp socket on lo:4321 err %d", err);
 
-    err = socket_create(&s[2],SOCKET_UDP,0);
+    err = socket_create(&s[2],SOCKET_UDP,0) |
+          socket_create(&s[3],SOCKET_UDP,0) |
+          socket_create(&s[4],SOCKET_UDP,0);
     PRINT("", TEST(!err), "creating udp socket on any err %d", err);
     printf("\n");
 
@@ -643,26 +645,27 @@ void testudp() {
 
     err = udp_rec(&s[2],msg,&len,0);
     PRINT("udp_rec", TEST(!err && !strcmp(msg,"bye 2")), "client rec   [%s] len %d err %d", msg, len, err);
-
    
     thread_join(&tt);
     printf("\n");
 
     err = socket_destroy(&s[0]) |
           socket_destroy(&s[1]) |
-          socket_destroy(&s[2]);
+          socket_destroy(&s[2]) |
+          socket_destroy(&s[3]) |
+          socket_destroy(&s[4]);
     PRINT("destroy", TEST(!err), "destroying sockets err %d", err);
 }
 
 #include "oi_tcp.h"
-void testtcpthread(void * s) {
+void testtcpthread(void * vs) {
     int err;
     size_t len = 10;
     char msg[50];
     address_t a;
-    socket_t ns;
+    socket_t ns, *s = (socket_t*)vs;
     
-    err = tcp_accept((socket_t*)s,&ns,&a);
+    err = tcp_accept(&s[0],&ns,&a);
     address_name(&a,msg,50,0);
     PRINT("tcp_accept", TEST(!err), "server accept %s:%d err %d", msg, address_port(&a), err);
     
@@ -678,11 +681,11 @@ void testtcpthread(void * s) {
     PRINT("destroy", TEST(!err), "destroying server connection err %d", err);
     
 
-    err = tcp_accept_any(0,&ns,&a,100,1,s);
+    err = tcp_accept_any(0,&ns,&a,100,3,&s[0],&s[3],&s[4]);
     address_name(&a,msg,len,0);
     PRINT("tcp_accept", TEST(!err), "server accept any %s:%d err %d", msg, address_port(&a), err);
     
-    err = tcp_rec_any(0,msg,&len,100,1,&ns);
+    err = tcp_rec_any(0,msg,&len,100,3,&ns,&s[3],&s[4]);
     PRINT("tcp_rec", TEST(!err && !strcmp(msg,"hello 2")), "srv rec any  [%s] len %d err %d", msg, len, err);
 
     strcpy(msg,"bye 2");
@@ -696,7 +699,7 @@ void testtcpthread(void * s) {
     err = socket_destroy(&ns);
     PRINT("destroy", TEST(!err), "destroying connection err %d", err);
 
-    err = tcp_accept_any((socket_t**)&s,&ns,&a,100,1,s);
+    err = tcp_accept_any(&s,&ns,&a,100,1,&s[0],&s[3],&s[4]);
     PRINT("tcp_accept", TEST(err==ERR_TIMEOUT && s==0), "server accept any err %d", err);
 }
 
@@ -705,78 +708,84 @@ void testtcp() {
     size_t len = 10;
     char msg[10] = "hello 1";
     address_t temp,*out_a;
-    socket_t s0,s1,s2,*out_s;
+    socket_t s[5],*out_s;
     thread_t tt;
 
-    err = socket_create(&s0,SOCKET_TCP,12345);
+    err = socket_create(&s[0],SOCKET_TCP,12345);
     PRINT("create", TEST(!err), "creating tcp socket on 12345 err %d", err);
 
     address_loopback(&temp,4321);
-    err = socket_create_on(&s1,SOCKET_TCP,&temp);
+    err = socket_create_on(&s[1],SOCKET_TCP,&temp);
     PRINT("", TEST(!err), "creating tcp socket on lo:4321 err %d", err);
 
-    err = socket_create(&s2,SOCKET_TCP,0);
+    err = socket_create(&s[2],SOCKET_TCP,0) |
+          socket_create(&s[3],SOCKET_TCP,0) |
+          socket_create(&s[4],SOCKET_TCP,0);
     PRINT("", TEST(!err), "creating tcp socket on any err %d", err);
     printf("\n");
 
-    err = tcp_get_keepalive(&s1);
+    err = tcp_get_keepalive(&s[1]);
     PRINT("keepalive", "\n", "get -> %d", err);
-    err = tcp_set_keepalive(&s1,1);
+    err = tcp_set_keepalive(&s[1],1);
     PRINT("", TEST(!err), "set (1) err %d", err);
-    err = tcp_get_keepalive(&s1);
+    err = tcp_get_keepalive(&s[1]);
     PRINT("", "\n", "get -> %d", err);
-    err = tcp_get_nodelay(&s2);
+    err = tcp_get_nodelay(&s[2]);
     PRINT("nodelay", "\n", "get -> %d", err);
-    err = tcp_set_nodelay(&s2,1);
+    err = tcp_set_nodelay(&s[2],1);
     PRINT("", TEST(!err), "set (1) err %d", err);
-    err = tcp_get_nodelay(&s2);
+    err = tcp_get_nodelay(&s[2]);
     PRINT("", "\n", "get -> %d", err);
     printf("\n");
 
-    thread_create(&tt,&testtcpthread,&s0);
+    thread_create(&tt,&testtcpthread,s);
 
 
     address_loopback(&temp,12345);
-    err = tcp_connect(&s1,&temp);
+    err = tcp_connect(&s[1],&temp);
     PRINT("tcp_connec", TEST(!err), "client connect err %d", err);
 
     strcpy(msg,"hello 1");
     len = 10;
     address_loopback(&temp,12345);
-    err = tcp_send(&s1,msg,&len);
+    err = tcp_send(&s[1],msg,&len);
     PRINT("tcp_send", TEST(!err), "client send  [%s] len %d err %d", msg, len, err);
    
-    err = tcp_rec(&s1,msg,&len);
+    err = tcp_rec(&s[1],msg,&len);
     PRINT("tcp_rec", TEST(!err && !strcmp(msg,"bye 1")), "client rec   [%s] len %d err %d", msg, len, err);
 
     address_loopback(&temp,12345);
-    err = tcp_connect_any(0,0,100,1,&s2,&temp);
+    err = tcp_connect_any(0,0,100,1,&s[2],&temp);
     PRINT("tcp_connec", TEST(!err), "client connect any err %d", err);
 
     strcpy(msg,"hello 2");
     len = 10;
     address_loopback(&temp,12345);
-    err = tcp_send(&s2,msg,&len);
+    err = tcp_send(&s[2],msg,&len);
     PRINT("tcp_send", TEST(!err), "client send  [%s] len %d err %d", msg, len, err);
    
-    err = tcp_rec(&s2,msg,&len);
+    err = tcp_rec(&s[2],msg,&len);
     PRINT("tcp_rec", TEST(!err && !strcmp(msg,"bye 2")), "client rec   [%s] len %d err %d", msg, len, err);
 
     thread_join(&tt);
     printf("\n");
     
-    err = socket_destroy(&s0) |
-          socket_destroy(&s1) |
-          socket_destroy(&s2);
+    err = socket_destroy(&s[0]) |
+          socket_destroy(&s[1]) |
+          socket_destroy(&s[2]) |
+          socket_destroy(&s[3]) |
+          socket_destroy(&s[4]);
     PRINT("destroy", TEST(!err), "destroying sockets err %d", err);
     
-    err = socket_create(&s0,SOCKET_TCP,0) |
-          socket_create(&s1,SOCKET_TCP,0) |
-          socket_create(&s2,SOCKET_TCP,0);
+    err = socket_create(&s[0],SOCKET_TCP,0) |
+          socket_create(&s[1],SOCKET_TCP,0) |
+          socket_create(&s[2],SOCKET_TCP,0) |
+          socket_create(&s[3],SOCKET_TCP,0) |
+          socket_create(&s[4],SOCKET_TCP,0);
     PRINT("create", TEST(!err), "creating tcp socket on any err %d", err);
     
     address_from_name(&temp,"1.1.1.1",12345,0);
-    err = tcp_connect_any(&out_s,&out_a,100,3,&s0,&temp,&s1,&temp,&s2,&temp);
+    err = tcp_connect_any(&out_s,&out_a,100,5,&s[0],&temp,&s[1],&temp,&s[2],&temp,&s[3],&temp,&s[4],&temp);
     PRINT("tcp_connec", TEST(err==ERR_TIMEOUT && out_s==0 && out_a==0), "client connect any err %d", err);
 }
 

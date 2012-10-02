@@ -120,20 +120,21 @@ oi_call udp_rec_any(socket_t ** res, void * buf, size_t * len, address_t * na, u
         s = va_arg(vlst, socket_t*);
 
         if (s->ipv6 != _OI_SINVAL && FD_ISSET(s->ipv6,&fset)) {
-            newlen = recvfrom(s->ipv6, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
+            va_end(vlst);
+            newlen = recvfrom(s->ipv6, buf, newlen, 0, na?&na->raw:&dump.raw, &na_s);
             if (newlen < 0) return _OI_NET_ERR;
             if (res) *res = s;
             *len = newlen;
-            va_end(vlst);
             return 0;
 
 #if defined(OI_SINGLESTACK)
         } else if (s->ipv4 != _OI_SINVAL && FD_ISSET(s->ipv4,&fset)) {
-            newlen = recvfrom(s->ipv4, buf, newlen,0, na?&na->raw:&dump.raw, &na_s);
+            va_end(vlst);
+            
+            newlen = recvfrom(s->ipv4, buf, newlen, 0, na?&na->raw:&dump.raw, &na_s);
             if (newlen < 0) return _OI_NET_ERR;
             if (res) *res = s;
             *len = newlen;
-            va_end(vlst);
             return 0;
 #endif
         }

@@ -322,6 +322,7 @@ oi_call tcp_accept_any(socket_t ** res_s, socket_t * ns, address_t * na, unsigne
     
     va_start(vlst, num);
     for (i=0; i<num; i++) {
+        s = va_arg(vlst, socket_t*);
 
         if (s->ipv6 != _OI_SINVAL && FD_ISSET(s->ipv6, &fset)) {
             va_end(vlst);
