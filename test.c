@@ -704,8 +704,8 @@ void testtcp() {
     int err;
     size_t len = 10;
     char msg[10] = "hello 1";
-    address_t temp;
-    socket_t s0,s1,s2;
+    address_t temp,*out_a;
+    socket_t s0,s1,s2,*out_s;
     thread_t tt;
 
     err = socket_create(&s0,SOCKET_TCP,12345);
@@ -750,7 +750,7 @@ void testtcp() {
     PRINT("tcp_rec", TEST(!err && !strcmp(msg,"bye 1")), "client rec   [%s] len %d err %d", msg, len, err);
 
     address_loopback(&temp,12345);
-    err = tcp_timed_connect(&s2,&temp,100);
+    err = tcp_select_connect(0,0,100,1,&s2,&temp);
     PRINT("tcp_connec", TEST(!err), "client timed connect err %d", err);
 
     strcpy(msg,"hello 2");
@@ -770,12 +770,14 @@ void testtcp() {
           socket_destroy(&s2);
     PRINT("destroy", TEST(!err), "destroying sockets err %d", err);
     
-    err = socket_create(&s0,SOCKET_TCP,0);
+    err = socket_create(&s0,SOCKET_TCP,0) |
+          socket_create(&s1,SOCKET_TCP,0) |
+          socket_create(&s2,SOCKET_TCP,0);
     PRINT("create", TEST(!err), "creating tcp socket on any err %d", err);
     
     address_from_name(&temp,"1.1.1.1",12345,0);
-    err = tcp_timed_connect(&s0,&temp,100);
-    PRINT("tcp_connec", TEST(err==ERR_TIMEOUT), "client timed connect err %d", err);
+    err = tcp_select_connect(&out_s,&out_a,100,3,&s0,&temp,&s1,&temp,&s2,&temp);
+    PRINT("tcp_connec", TEST(err==ERR_TIMEOUT && out_s==0 && out_a==0), "client timed connect err %d", err);
 }
 
 #define TESTF(file) if (!all || !strcmp(argv[argc-1],#file) || !strcmp(argv[argc-1],"oi_"#file)) {printf(TXTY"\noi_"#file" :\n"TXTN); test##file();}

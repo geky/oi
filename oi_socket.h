@@ -19,12 +19,12 @@ typedef SOCKET _oi_sock;
 #   define _OI_SBLOCK(sock) { \
         u_long blk = 0; \
         if (ioctlsocket(sock,FIONBIO,&blk)) \
-            _OI_SDIE(NET,s); \
+            _OI_SDIE(_OI_NET_ERR,s); \
     } 
 #   define _OI_SUNBLOCK(sock) { \
         u_long blk = 1; \
         if (ioctlsocket(sock,FIONBIO,&blk)) \
-            _OI_SDIE(NET,s); \
+            _OI_SDIE(_OI_NET_ERR,s); \
     }
 #else
 typedef signed int _oi_sock;
@@ -38,34 +38,34 @@ typedef signed int _oi_sock;
 #   define _OI_SCLOSE(sock) close(sock)
 #   define _OI_SBLOCK(sock) \
         if (fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)&~O_NONBLOCK)) \
-            _OI_SDIE(NET,s);
+            _OI_SDIE(_OI_NET_ERR,s);
 #   define _OI_SUNBLOCK(sock) \
         if (fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)|O_NONBLOCK)) \
-            _OI_SDIE(NET,s);
+            _OI_SDIE(_OI_NET_ERR,s);
 #endif
 
 #if defined(OI_DUALSTACK) 
 #define _OI_SOPT6(sock) { \
     int opt = 0; \
     if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,(char*)&opt,sizeof opt)) \
-        _OI_SDIE(NET,s); \
+        _OI_SDIE(_OI_NET_ERR,s); \
     opt = 1; \
     if (setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof opt)) \
-        _OI_SDIE(NET,s); \
+        _OI_SDIE(_OI_NET_ERR,s); \
 }
 #else
 #define _OI_SOPT4(sock) { \
     int opt = 1; \
     if (setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof opt)) \
-        _OI_SDIE(NET,s); \
+        _OI_SDIE(_OI_NET_ERR,s); \
 }
 #if defined(IPV6_V6ONLY)
 #define _OI_SOPT6(sock) { \
     int opt = 1; \
     if (setsockopt(sock,IPPROTO_IPV6,IPV6_V6ONLY,(char*)&opt,sizeof opt)) \
-        _OI_SDIE(NET,s); \
+        _OI_SDIE(_OI_NET_ERR,s); \
     if (setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&opt,sizeof opt)) \
-        _OI_SDIE(NET,s); \
+        _OI_SDIE(_OI_NET_ERR,s); \
 }
 #else
 #define _OI_SOPT6(sock) _OI_SOPT4(sock)
@@ -90,7 +90,7 @@ typedef union {
 } socket_t;
 #endif
 
-#define _OI_SDIE(rr,ss) {int ee=_OI_##rr##_ERR; socket_destroy(ss); return ee;}
+#define _OI_SDIE(rr,ss) {int ee=rr; socket_destroy(ss); return ee;}
 #define _OI_SMAP(addr,map) \
     memset(&map,0,sizeof map); \
     map.ipv6.sin6_family = AF_INET6; \
@@ -141,7 +141,7 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
 #endif
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
     s->ipv4 = socket(AF_INET, proto, 0);
-    if (s->ipv4 == _OI_SINVAL) _OI_SDIE(NET,s);
+    if (s->ipv4 == _OI_SINVAL) _OI_SDIE(_OI_NET_ERR,s);
     _OI_SOPT4(s->ipv4);
     _OI_SBLOCK(s->ipv4);
     
@@ -149,12 +149,12 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
         memset(&temp,0,sizeof temp.ipv4);
         temp.ipv4.sin_family = AF_INET;
         temp.ipv4.sin_port = htons(port);
-        if (bind(s->ipv4, &temp.raw, sizeof temp.ipv4)) _OI_SDIE(NET,s);
+        if (bind(s->ipv4, &temp.raw, sizeof temp.ipv4)) _OI_SDIE(_OI_NET_ERR,s);
     }
 #endif
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
     s->ipv6 = socket(AF_INET6, proto, 0);
-    if (s->ipv6 == _OI_SINVAL) _OI_SDIE(NET,s);
+    if (s->ipv6 == _OI_SINVAL) _OI_SDIE(_OI_NET_ERR,s);
     _OI_SOPT6(s->ipv6);
     _OI_SBLOCK(s->ipv6);
 
@@ -162,7 +162,7 @@ oi_call socket_create(socket_t * s, int proto, uint16 port) {
         memset(&temp,0,sizeof temp.ipv6);
         temp.ipv6.sin6_family = AF_INET6;
         temp.ipv6.sin6_port = htons(port);
-        if (bind(s->ipv6, &temp.raw, sizeof temp.ipv6)) _OI_SDIE(NET,s);
+        if (bind(s->ipv6, &temp.raw, sizeof temp.ipv6)) _OI_SDIE(_OI_NET_ERR,s);
     }
 #endif
     return 0;
@@ -177,19 +177,19 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
         s->ipv6 = _OI_SINVAL;
 #endif
         s->ipv4 = socket(AF_INET, proto, 0);
-        if (s->ipv4 == _OI_SINVAL) _OI_SDIE(NET,s);
+        if (s->ipv4 == _OI_SINVAL) _OI_SDIE(_OI_NET_ERR,s);
         _OI_SOPT4(s->ipv4);
         _OI_SBLOCK(s->ipv4);
-        if (bind(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(NET,s);
+        if (bind(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(_OI_NET_ERR,s);
 #elif defined(OI_DUALSTACK)
         _OI_NET_INIT;
         s->ipv6 = socket(AF_INET6, proto, 0);
-        if (s->ipv6 == _OI_SINVAL) _OI_SDIE(NET,s);
+        if (s->ipv6 == _OI_SINVAL) _OI_SDIE(_OI_NET_ERR,s);
         _OI_SOPT6(s->ipv6);
         _OI_SBLOCK(s->ipv6);
         {   address_t map;
             _OI_SMAP(a,map) 
-            if (bind(s->ipv6, &map.raw, sizeof map.ipv6)) _OI_SDIE(NET,s);
+            if (bind(s->ipv6, &map.raw, sizeof map.ipv6)) _OI_SDIE(_OI_NET_ERR,s);
         }
 #else
         s->ipv4 = _OI_SINVAL;
@@ -202,10 +202,10 @@ oi_call socket_create_on(socket_t * s, int proto, address_t * a) {
         s->ipv4 = _OI_SINVAL;
 #endif
         s->ipv6 = socket(AF_INET6, proto, 0);
-        if (s->ipv6 == _OI_SINVAL) _OI_SDIE(NET,s);
+        if (s->ipv6 == _OI_SINVAL) _OI_SDIE(_OI_NET_ERR,s);
         _OI_SOPT6(s->ipv6);
         _OI_SBLOCK(s->ipv6);
-        if (bind(s->ipv6, &a->raw, sizeof a->ipv6)) _OI_SDIE(NET,s);
+        if (bind(s->ipv6, &a->raw, sizeof a->ipv6)) _OI_SDIE(_OI_NET_ERR,s);
 #else
         s->ipv6 = _OI_SINVAL;
         return _OI_SERR_NOS;

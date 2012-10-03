@@ -14,7 +14,8 @@
 oi_call tcp_connect(socket_t * s, address_t * a) {    
     if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
-        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) _OI_SDIE(TIME,s);
+        if (connect(s->ipv4, &a->raw, sizeof a->ipv4)) 
+            _OI_SDIE(_OI_TIME_ERR,s);
 #if defined(OI_SINGLESTACK)
         if (s->ipv6 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv6);
@@ -25,14 +26,16 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
 #elif defined(OI_DUALSTACK)
         address_t map;
         _OI_SMAP(a,map)
-        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) _OI_SDIE(TIME,s);
+        if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) 
+            _OI_SDIE(_OI_TIME_ERR,s);
         return 0;
 #else
         return _OI_SERR_NOS;
 #endif
     } else {
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
-        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) _OI_SDIE(TIME,s);
+        if (connect(s->ipv6, &a->raw, sizeof a->ipv6)) 
+            _OI_SDIE(_OI_TIME_ERR,s);
 #if defined(OI_SINGLESTACK)
         if (s->ipv4 != _OI_SINVAL) {
             _OI_SCLOSE(s->ipv4);
@@ -50,93 +53,169 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
 // returns ERR_UNREACHABLE_HOST if the end computer is not reachable.
 // returns ERR_UNREACHABLE_NET if the network containing the end computer is not reachable.
 // returns ERR_TIMEOUT if the connection times out
-oi_call tcp_select_connect(socket_t ** res, address_t * a, unsigned int ms, int num, ...) {
-    fd_set fset;
-    struct timeval time;
+oi_call tcp_select_connect(socket_t ** res_s, address_t ** res_a, unsigned int ms, int num, ...) {
+fd_set fset;
+    struct timeval time, *timept=0;
+    socket_t * s;
+    address_t * a;
+    va_list vlst;
+    _oi_sock max = 0;
+    int i, err = 0;
 
+    if (res_s) *res_s = 0;
+    if (res_a) *res_a = 0;
     FD_ZERO(&fset);
-    time.tv_usec = (ms%1000)*1000;
-    time.tv_sec = (ms/1000);
-
-    if (a->family == AF_INET) {
+    if (ms) {
+        time.tv_usec = (ms%1000)*1000;
+        time.tv_sec = (ms/1000);
+        timept = &time;
+    }
+    
+    va_start(vlst, num);
+    for (i=0; i<num; i++) {
+        s = va_arg(vlst, socket_t*);
+        a = va_arg(vlst, address_t*);
+        
+        if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
-        _OI_SUNBLOCK(s->ipv4);
-        if (connect(s->ipv4, &a->raw, sizeof a->ipv4) && 
-            _OI_NET_ERR != _OI_SERR_PROG)
-                _OI_SDIE(TIME,s);
 #if defined(OI_SINGLESTACK)
-        if (s->ipv6 != _OI_SINVAL) {
+            if (s->ipv6 != _OI_SINVAL) {
+                _OI_SCLOSE(s->ipv6);
+                s->ipv6 = _OI_SINVAL;
+            }
+#endif
+            _OI_SUNBLOCK(s->ipv4);
+            
+            if (connect(s->ipv4, &a->raw, sizeof a->ipv4) && 
+                  _OI_NET_ERR != _OI_SERR_PROG) {
+                _OI_SCLOSE(s->ipv4);
+                s->ipv4 = _OI_SINVAL;
+            } else {
+                FD_SET(s->ipv4, &fset);
+                if (s->ipv4 > max) max = s->ipv4;
+            }
+#elif defined(OI_DUALSTACK)
+            address_t map;
+            _OI_SMAP(a, map);
+            _OI_SUNBLOCK(s->ipv6);
+            
+            if (connect(s->ipv6, &map.raw, sizeof map.ipv6) && 
+                  _OI_NET_ERR != _OI_SERR_PROG) {
+                _OI_SCLOSE(s->ipv6);
+                s->ipv6 = _OI_SINVAL;
+            } else {
+                FD_SET(s->ipv6, &fset);
+                if (s->ipv6 > max) max = s->ipv6;
+            }
+#else
             _OI_SCLOSE(s->ipv6);
             s->ipv6 = _OI_SINVAL;
-        }
 #endif
-        FD_SET(s->ipv4,&fset);
-        if (0 > select(s->ipv4+1, 0, &fset, 0, &time))
-            _OI_SDIE(NET,s);
-        
-        if (FD_ISSET(s->ipv4,&fset)) {
-            _OI_SBLOCK(s->ipv4);
-            if (connect(s->ipv4, &a->raw, sizeof a->ipv4) && 
-                _OI_NET_ERR != _OI_SERR_CONN) 
-                    return _OI_TIME_ERR;
-            return 0;
         } else {
-            socket_destroy(s);
-            return _OI_SERR_TIME;
-        }
-#elif defined(OI_DUALSTACK)
-        address_t map;
-        _OI_SMAP(a,map);
-        _OI_SUNBLOCK(s->ipv6);
-        if (connect(s->ipv6, &map.raw, sizeof map.ipv6) &&
-            _OI_NET_ERR != _OI_SERR_PROG) 
-                _OI_SDIE(TIME,s);
-    
-        FD_SET(s->ipv6,&fset);
-        if (0 > select(s->ipv6+1, 0, &fset, 0, &time))
-            _OI_SDIE(NET,s);
-    
-        if (FD_ISSET(s->ipv6,&fset)) {
-            _OI_SBLOCK(s->ipv6);
-            if (connect(s->ipv6, &map.raw, sizeof map.ipv6)) return _OI_TIME_ERR;
-            return 0;
-        } else {
-            socket_destroy(s);
-            return _OI_SERR_TIME;
-        }
-#else
-        return _OI_SERR_NOS;
-#endif
-    } else {
 #if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
-        _OI_SUNBLOCK(s->ipv6);
-        if (connect(s->ipv6, &a->raw, sizeof a->ipv6) &&
-            _OI_NET_ERR != _OI_SERR_PROG) 
-                _OI_SDIE(TIME,s);
 #if defined(OI_SINGLESTACK)
-        if (s->ipv4 != _OI_SINVAL) {
+            if (s->ipv4 != _OI_SINVAL) {
+                _OI_SCLOSE(s->ipv4);
+                s->ipv4 = _OI_SINVAL;
+            }
+#endif
+            _OI_SUNBLOCK(s->ipv6);
+            
+            if (connect(s->ipv6, &a->raw, sizeof a->ipv6) &&
+                  _OI_NET_ERR != _OI_SERR_PROG) {
+                _OI_SCLOSE(s->ipv6);
+                s->ipv6 = _OI_SINVAL;
+            } else {
+                FD_SET(s->ipv6, &fset);
+                if (s->ipv6 > max) max = s->ipv6;
+            }
+#else
             _OI_SCLOSE(s->ipv4);
             s->ipv4 = _OI_SINVAL;
-        }
 #endif
-        FD_SET(s->ipv6,&fset);
-        if (0 > select(s->ipv6+1, 0, &fset, 0, &time)) 
-            _OI_SDIE(NET,s);
-    
-        if (FD_ISSET(s->ipv6,&fset)) {
-            _OI_SBLOCK(s->ipv6);
-            if (connect(s->ipv6, &a->raw, sizeof a->ipv6) && 
-                _OI_NET_ERR != _OI_SERR_CONN) 
-                    return _OI_TIME_ERR;
-            return 0;
-        } else {
-            socket_destroy(s);
-            return _OI_SERR_TIME;
         }
-#else
-        return _OI_SERR_NOS;
-#endif
     }
+    va_end(vlst);
+    
+    
+    i = select(max+1, 0, &fset, 0, timept);
+    
+    if (i == 0)
+        err = _OI_SERR_TIME;
+    else if (i < 0)
+        err = _OI_NET_ERR;
+    
+    va_start(vlst, num);
+    for (i=0; i<num; i++) {
+        s = va_arg(vlst, socket_t*);
+        a = va_arg(vlst, address_t*);
+        
+        if (a->family == AF_INET) {
+#if defined(OI_IPV4) || defined(OI_SINGLESTACK)
+            if (s->ipv4 != _OI_SINVAL) {
+                if (FD_ISSET(s->ipv4, &fset)) {
+                    _OI_SBLOCK(s->ipv4);
+                    if (connect(s->ipv4, &a->raw, sizeof a->ipv4) &&
+                          _OI_NET_ERR != _OI_SERR_CONN) {
+                        _OI_SCLOSE(s->ipv4);
+                        s->ipv4 = _OI_SINVAL;
+                        err = _OI_SERR_TIME;
+                    } else {
+                        if (res_s) *res_s = s;
+                        if (res_a) *res_a = a;
+                    }
+                } else {
+                    _OI_SCLOSE(s->ipv4);
+                    s->ipv4 = _OI_SINVAL;
+                }
+            }
+#elif defined(OI_DUALSTACK)
+            address_t map;
+            _OI_SMAP(a, map);
+            
+            if (s->ipv6 != _OI_SINVAL) {
+                if (FD_ISSET(s->ipv6, &fset)) {
+                    _OI_SBLOCK(s->ipv6);
+                    if (connect(s->ipv6, &map.raw, sizeof map.ipv6) &&
+                          _OI_NET_ERR != _OI_SERR_CON) {
+                        _OI_SCLOSE(s->ipv6);
+                        s->ipv6 = _OI_SINVAL;
+                        err = _OI_SERR_TIME;
+                    } else {
+                        if (res_s) *res_s = s;
+                        if (res_a) *res_a = a;
+                    }
+                } else {
+                    _OI_SCLOSE(s->ipv6);
+                    s->ipv6 = _OI_SINVAL;
+                }
+            }
+#endif
+        } else {
+#if defined(OI_IPV6) || defined(OI_DUALSTACK) || defined(OI_SINGLESTACK)
+            if (s->ipv6 != _OI_SINVAL) {
+                if (FD_ISSET(s->ipv6, &fset)) {
+                    _OI_SBLOCK(s->ipv6);
+                    if (connect(s->ipv6, &a->raw, sizeof a->ipv6) &&
+                          _OI_NET_ERR != _OI_SERR_CONN) {
+                        _OI_SCLOSE(s->ipv6);
+                        s->ipv6 = _OI_SINVAL;
+                        err = _OI_SERR_TIME;
+                    } else {
+                        if (res_s) *res_s = s;
+                        if (res_a) *res_a = a;
+                    }
+                } else {
+                    _OI_SCLOSE(s->ipv6);
+                    s->ipv6 = _OI_SINVAL;
+                }
+            }
+#endif
+        }
+    }
+    va_end(vlst);
+    
+    return err;
 }
 
 oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
