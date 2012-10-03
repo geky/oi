@@ -428,7 +428,7 @@ Sends the buffer with the length in len through the socket given in s to the add
 `oi_call udp_rec(socket_t * s, void * buffer, size_t * len, address_t * addr)`  
 Waits for data to be received on the socket given. When the socket receives data it is stored in the buffer limited by the length in len and the amount of data is stored in len. The address that the data is received from is then stored in addr.
 
-`oi_call udp_rec_any(socket_t ** select, void * buffer, size_t * len, address_t * addr, unsigned int ms, int number, socket_t * s1, socket_t * s2, ...)`  
+`oi_call udp_rec_any(socket_t ** select, void * buffer, size_t * len, address_t * addr, unsigned int ms, int number, socket_t * s1, ...)`  
 Waits for data to be received on any of the sockets given for the milliseconds given. If the socket receives data it is stored in the buffer limited by the length in len and the amount of data is stored in len. The address that the data is received from is then stored in addr and the socket that receives the data is pointed to by select. If the time runs out, len and select are set to 0 and the functions returns ERR_TIMEOUT.
 
 [oi_tcp](oi_tcp.h)
@@ -449,13 +449,13 @@ oi_tcp contains the socket code specifically for TCP, the Transmission Control P
 `oi_call tcp_connect(socket_t * s, address_t * addr)`  
 Connects the specified socket to the address given in addr. It can return ERR_REFUSED if the reciever does not accept the connection, ERR_UNREACHABLE_HOST if the end computer is not reachable, ERR_UNREACHABLE_NET if the network containing the end computer is not reachable, and ERR_TIMEOUT if the connection times out. If an error is returned the socket will be cleaned up completely and require reinitialization.
 
-`oi_call tcp_connect_any(socket_t ** select_s, address_t ** select_a, unsigned int ms, int number, socket_t * s1, address_t * a1, socket_t * s2, address_t * s2, ...)`  
+`oi_call tcp_connect_any(socket_t ** select_s, address_t ** select_a, unsigned int ms, int number, socket_t * s1, address_t * a1, ...)`  
 Waits for a connection on any of the specified sockets to the addresses given or times out after the given milliseconds. The socket and address that make a connection will be pointed to by select_s and select_a. It can return ERR_REFUSED if the reciever does not accept the connection, ERR_UNREACHABLE_HOST if the end computer is not reachable, ERR_UNREACHABLE_NET if the network containing the end computer is not reachable, and ERR_TIMEOUT if the connection times out. All sockets that don't make a connection will be cleaned up completely and require reinitialization.
 
 `oi_call tcp_accept(socket_t * s, socket_t * connectsock, address_t * addr)`  
 Waits for a new connection on the socket s. When a new connection occurs, connectsock is created with the new connection and the address that is being connected from is stored in addr. 
 
-`oi_call tcp_accept_any(socket_t ** select, socket_t * connectsock, address_t * addr, unsigned int ms, int number, socket_t * s1, socket_t * s2, ...)`  
+`oi_call tcp_accept_any(socket_t ** select, socket_t * connectsock, address_t * addr, unsigned int ms, int number, socket_t * s1, ...)`  
 Waits for a new connection on any of the specified sockets for the time given in milliseconds. If a new connection occurs, connectsock is created with the new connection ,the address that is being connected from is stored in addr, and select will point to the socket that was connected to. Otherwise it returns ERR_TIMEOUT.
 
 `oi_call tcp_send(socket_t * s, void * buffer, size_t * len)`  
@@ -464,7 +464,7 @@ Sends the buffer with the length in len through the socket given in s. It can re
 `oi_call tcp_rec(socket_t * s, void * buffer, size_t * len)`  
 Waits for data to be received on the socket given. If the socket receives data it is stored in the buffer limited by the length in len and the amount of data is stored in len. It can return ERR_DISCONNECTED if the socket is disconnected, or ERR_TIMEOUT if the connection times out. If an error is returned len will be set to 0.
 
-`oi_call tcp_rec_any(socket_t ** select, void * buffer, size_t * len, unsigned int ms, int number, socket_t * s1, socket_t * s2, ...)`  
+`tcp_rec_any(socket_t ** select, void * buffer, size_t * len, unsigned int ms, int number, socket_t * s1, ...)`  
 Waits for data to be received on any of the specified sockets for the milliseconds given. If a socket receives data it is stored in the buffer limited by the length in len with the amount of data stored in len, and the socket that is received from is pointed to by select. It can return ERR_DISCONNECTED if the socket is disconnected, or ERR_TIMEOUT if the connection times out. If an error is returned select and len will be set to 0.
 
 `oi_call tcp_set_nodelay(socket_t * s, int val)`  
