@@ -520,8 +520,8 @@ void testaddress() {
     printf("\n");
 
     count = sizeof(a)/sizeof(address_t);
-    err = address_all_from_name(a,&count,"www.google.com",port,1);
-    PRINT("all_from", "\n", "\"www.google.com\"");
+    err = address_from_name_all(a,&count,"www.google.com",port,1);
+    PRINT("from_all", "\n", "\"www.google.com\"");
     PRINT("", TEST(!err), "address all from name count:%d err %d", count, err);
     
     for(;count;count--) {
