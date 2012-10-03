@@ -69,7 +69,7 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
 
 // Returns ERR_NOT_FOUND if name is not found
 // Returns ERR_NO_DATA if name is found but has no data associated with it
-oi_call address_all_from_name(address_t * a, size_t * len, const char * s, uint16 port, int lookup) {
+oi_call address_from_name_all(address_t * a, size_t * len, const char * s, uint16 port, int lookup) {
     size_t t=0;
     struct addrinfo hint, *res, *hit;
     int err;

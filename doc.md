@@ -355,7 +355,7 @@ Creates an address in addr from the raw IPv6 address and port. The address must 
 Creates an address in addr from the null-terminated string representation and port. If the value of lookup is not zero, a DNS lookup is performed for domain names, otherwise only conversion from the standard numeric notation of IP addresses can be performed. It can return either ERR_NOT_FOUND if name is not found, or ERR_NO_DATA if the name is found but has no data associated with it
 
 
-`oi_call address_all_from_name(address_t * adarray, size_t * len, const char * name, uint16 port, int lookup)`  
+`oi_call address_from_name_all(address_t * adarray, size_t * len, const char * name, uint16 port, int lookup)`  
 Multiple IP addresses can exist for a single domain name. address_all_from_name allows you to retrieve all address representations of a name in an array address_t point to by adarray with length given in len. It then sets len to the number of addresses found. It can return either ERR_NOT_FOUND if name is not found, or ERR_NO_DATA if the name is found but has no data associated with it
 
 
