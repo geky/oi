@@ -784,7 +784,7 @@ void testtcp() {
           socket_create(&s[4],SOCKET_TCP,0);
     PRINT("create", TEST(!err), "creating tcp socket on any err %d", err);
     
-    address_from_name(&temp,"1.1.1.1",12345,0);
+    address_from_name(&temp,"192.0.2.0",12345,0);
     err = tcp_connect_any(&out_s,&out_a,100,5,&s[0],&temp,&s[1],&temp,&s[2],&temp,&s[3],&temp,&s[4],&temp);
     PRINT("tcp_connec", TEST(err==ERR_TIMEOUT && out_s==0 && out_a==0), "client connect any err %d", err);
 }
