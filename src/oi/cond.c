@@ -1,4 +1,4 @@
-#include "oi_cond.h"
+#include "oi/cond.h"
 
 #ifdef OI_WIN
 #if WINVER >= 0x0600

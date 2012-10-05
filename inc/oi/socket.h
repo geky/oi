@@ -2,10 +2,10 @@
 #ifndef OI_SOCKET
 #define OI_SOCKET 1
 
-#include "oi_os.h"
-#include "oi_types.h"
-#include "oi_net.h"
-#include "oi_address.h"
+#include "oi/os.h"
+#include "oi/types.h"
+#include "oi/net.h"
+#include "oi/address.h"
 
 #ifdef OI_CPP
 extern "C" {

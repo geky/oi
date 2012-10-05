@@ -1,4 +1,4 @@
-#include "oi_os.h"
+#include "oi/os.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,7 +37,7 @@ const char * MEM(int b, void * p, int len) {
     return memmm[b];
 }
 
-#include "oi_os.h"
+#include "oi/os.h"
 void testos() {
 #if defined(OI_WIN)
     PRINT("system",TEST(1),"Windows");
@@ -72,7 +72,7 @@ void testos() {
 #endif
 }
 
-#include "oi_err.h"
+#include "oi/err.h"
 void testerr() {
     const char * p;
     p = get_error(0);
@@ -107,7 +107,7 @@ void testerr() {
     PRINT("", TEST(p), " -> %s", p);
 }
 
-#include "oi_types.h"
+#include "oi/types.h"
 void testtypes() {
     uint8  ui8  = (uint8 )-1;
     uint16 ui16 = (uint16)-1;
@@ -131,7 +131,7 @@ void testtypes() {
     PRINT("float64", TEST(sizeof(float64) == 8), "size = %-2d 1/3->%.20f", sizeof(float64), (float64)(1.0/3.0));
 }
 
-#include "oi_pack.h"
+#include "oi/pack.h"
 void testpack() {
     uint8 data[16];
     uint8 ii[5] = {0x12,0x34,0x56,0x78,0x9A};
@@ -187,7 +187,7 @@ void testpack() {
 }
 
 
-#include "oi_thread.h"
+#include "oi/thread.h"
 void testthreadthread(void * a) {
     int err;
     PRINT("", "\n", "I am thread %d", a);
@@ -219,7 +219,7 @@ void testthread() {
 }
 
 
-#include "oi_local.h"
+#include "oi/local.h"
 void testlocalthread(void * p) {
     local_t * lp = (local_t*)p;
     int err;
@@ -255,7 +255,7 @@ void testlocal() {
     PRINT("destroy", TEST(!err), "destroying local err %d", err);
 }
 
-#include "oi_mutex.h"
+#include "oi/mutex.h"
 int testmutexdata;
 
 void testmutexthread(void * p) {
@@ -307,7 +307,7 @@ void testmutex() {
 
 
 
-#include "oi_rwlock.h"
+#include "oi/rwlock.h"
 void testrwlockthread(void * d) {
     rwlock_t * prw = (rwlock_t*)d;
     int err;
@@ -356,7 +356,7 @@ void testrwlock() {
     PRINT("destroy", TEST(!err), "destroying rwlock err %d", err);
 }
 
-#include "oi_cond.h"
+#include "oi/cond.h"
 cond_t * condpc;
 mutex_t * condpm;
 int condmax;
@@ -428,7 +428,7 @@ void testcond() {
     PRINT("destroy", TEST(!err), "destroying cond err %d", err);
 }
 
-#include "oi_time.h"
+#include "oi/time.h"
 void testtime() {
     int err;
     uint64 b,a;
@@ -445,7 +445,7 @@ void testtime() {
     PRINT("", TEST((a-b)/100 == 30), "after  -> %llu  diff = %llu", a, a-b);    
 }
 
-#include "oi_net.h"
+#include "oi/net.h"
 void testnet() {
 #if defined(OI_DUALSTACK)
     PRINT("net",TEST(1),"Dual Stack");
@@ -460,7 +460,7 @@ void testnet() {
 #endif
 }
 
-#include "oi_address.h"
+#include "oi/address.h"
 void testaddress() {
     address_t a[4];
     int err;
@@ -539,7 +539,7 @@ void testaddress() {
     ADDTESTWITH(0,"\n");
 }
 
-#include "oi_socket.h"
+#include "oi/socket.h"
 void testsocket() {
     int err;
     address_t temp;
@@ -578,7 +578,7 @@ void testsocket() {
     PRINT("", TEST(!err), "destroying socket err %d", err);
 }
 
-#include "oi_udp.h"
+#include "oi/udp.h"
 void testudpthread(void * vs) {
     int err;
     size_t len = 10;
@@ -657,7 +657,7 @@ void testudp() {
     PRINT("destroy", TEST(!err), "destroying sockets err %d", err);
 }
 
-#include "oi_tcp.h"
+#include "oi/tcp.h"
 void testtcpthread(void * vs) {
     int err;
     size_t len = 10;

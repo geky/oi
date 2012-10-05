@@ -1,7 +1,7 @@
 #ifndef OI_ERR
 #define OI_ERR 1
 
-#include "oi_os.h"
+#include "oi/os.h"
 
 #ifdef OI_CPP
 extern "C" {

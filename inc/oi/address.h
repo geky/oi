@@ -2,9 +2,9 @@
 #ifndef OI_ADDRESS
 #define OI_ADDRESS 1
 
-#include "oi_os.h"
-#include "oi_types.h"
-#include "oi_net.h"
+#include "oi/os.h"
+#include "oi/types.h"
+#include "oi/net.h"
 
 #ifdef OI_CPP
 extern "C" {

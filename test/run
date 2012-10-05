@@ -1,4 +1,13 @@
 #!/bin/bash
+#a quick script to test oi on machines with gcc
 
-#a quick script to test oi on linux machines
-gcc ../src/* test.c -I../inc -Wall -pthread -o test && ./test
+gcc ../src/oi/* test.c -I../inc -DOI_IPV4 -Wall -pthread -o "test"
+gcc ../src/oi/* test.c -I../inc -DOI_IPV6 -Wall -pthread -o "test"
+gcc ../src/oi/* test.c -I../inc -DOI_SINGLESTACK -Wall -pthread -o "test"
+gcc ../src/oi/* test.c -I../inc -Wall -pthread -o "test"
+
+if [ -f "test" ] ; then
+
+    ./test $@
+
+fi

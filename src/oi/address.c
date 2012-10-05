@@ -1,4 +1,4 @@
-#include "oi_address.h"
+#include "oi/address.h"
 
 #if defined(OI_IPV4)
 #   define _OI_AFAMILY AF_INET

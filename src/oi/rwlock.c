@@ -1,4 +1,4 @@
-#include "oi_rwlock.h"
+#include "oi/rwlock.h"
 
 #ifdef OI_WIN
 #if WINVER >= 0x0600

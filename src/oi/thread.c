@@ -1,4 +1,4 @@
-#include "oi_thread.h"
+#include "oi/thread.h"
 
 #ifdef OI_WIN
 

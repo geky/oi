@@ -1,8 +1,8 @@
 #ifndef OI_TIME
 #define OI_TIME 1
 
-#include "oi_os.h"
-#include "oi_types.h"
+#include "oi/os.h"
+#include "oi/types.h"
 
 #ifdef OI_CPP
 extern "C" {

@@ -2,7 +2,7 @@
 #ifndef OI_MUTEX
 #define OI_MUTEX 1
 
-#include "oi_os.h"
+#include "oi/os.h"
 
 #ifdef OI_CPP
 extern "C" {
@@ -25,7 +25,6 @@ oi_call mutex_destroy(mutex_t*);
 
 oi_call mutex_lock(mutex_t*);
 
-// returns ERR_IN_USE on failure
 oi_call mutex_try_lock(mutex_t*);
 
 oi_call mutex_unlock(mutex_t*);

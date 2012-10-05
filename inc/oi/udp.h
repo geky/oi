@@ -2,11 +2,11 @@
 #ifndef OI_UDP
 #define OI_UDP 1
 
-#include "oi_os.h"
-#include "oi_types.h"
-#include "oi_net.h"
-#include "oi_address.h"
-#include "oi_socket.h"
+#include "oi/os.h"
+#include "oi/types.h"
+#include "oi/net.h"
+#include "oi/address.h"
+#include "oi/socket.h"
 
 #ifdef OI_CPP
 extern "C" {

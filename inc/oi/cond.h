@@ -2,8 +2,8 @@
 #ifndef OI_COND
 #define OI_COND 1
 
-#include "oi_os.h"
-#include "oi_mutex.h"
+#include "oi/os.h"
+#include "oi/mutex.h"
 
 #ifdef OI_CPP
 extern "C" {

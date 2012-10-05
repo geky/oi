@@ -1,7 +1,7 @@
 #ifndef OI_TYPES
 #define OI_TYPES 1
 
-#include "oi_os.h"
+#include "oi/os.h"
 
 #include <math.h>
 

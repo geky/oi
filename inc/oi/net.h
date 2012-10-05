@@ -1,6 +1,6 @@
 #ifndef OI_NET
 #define OI_NET 1
-#include "oi_os.h"
+#include "oi/os.h"
 
 #include <string.h>
 #include <stdarg.h>
