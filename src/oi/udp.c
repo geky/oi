@@ -1,5 +1,60 @@
 #include "oi/udp.h"
 
+#ifdef OI_WIN
+#   define _OI_NET_INIT {                       \
+        WSADATA wsadata; int err; \
+        if((err = WSAStartup(MAKEWORD(2,2),&wsadata)))  \
+            return err; }
+
+#   define _OI_NET_DEINIT                       \
+        if (WSACleanup()) return WSAGetLastError();
+
+#   define _OI_NET_ERR WSAGetLastError()
+#
+#
+#   define _OI_SERR_NOS WSAEAFNOSUPPORT
+#   define _OI_SERR_TIME ERROR_TIMEOUT
+#   define _OI_SINVAL INVALID_SOCKET
+#
+#else
+#   include <errno.h>
+#
+#   define _OI_NET_INIT
+#   define _OI_NET_DEINIT
+#   define _OI_NET_ERR errno
+#
+#   define _OI_SERR_NOS EAFNOSUPPORT
+#   define _OI_SERR_TIME ETIMEDOUT
+#   define _OI_SINVAL -1
+#
+#endif
+
+
+#define _OI_SDIE(rr,ss) {int ee=rr; socket_destroy(ss); return ee;}
+#define _OI_SMAP(addr,map) \
+    memset(&map,0,sizeof map); \
+    map.ipv6.sin6_family = AF_INET6; \
+    map.ipv6.sin6_port = addr->ipv4.sin_port; \
+    memset(&map.ipv6.sin6_addr.s6_addr[10],0xff,2); \
+    memcpy(&map.ipv6.sin6_addr.s6_addr[12],&addr->ipv4.sin_addr,4);
+#define _OI_SUMAP(addr) \
+    if (addr && addr->ipv6.sin6_addr.s6_addr[0] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[1] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[2] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[3] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[4] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[5] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[6] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[7] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[8] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[9] == 0x00 && \
+                addr->ipv6.sin6_addr.s6_addr[10]== 0xff && \
+                addr->ipv6.sin6_addr.s6_addr[11]== 0xff) { \
+        addr->ipv4.sin_family = AF_INET; \
+        memcpy(&addr->ipv4.sin_addr, &addr->ipv6.sin6_addr.s6_addr[12], 4); \
+    }
+
+
 
 oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
     int newlen = *len;

@@ -5,6 +5,15 @@
 
 #include <math.h>
 
+
+// types int8   //
+//       uint8  //
+//       int16  //
+//       uint16 //
+//       int32  //
+//       uint32 //
+//       int64  //
+//       uint64 //
 #if defined(OI_MSVC)
 typedef signed char        int8;
 typedef unsigned char      uint8;
@@ -34,10 +43,18 @@ typedef unsigned int       uint32;
 typedef signed long long   int64;
 typedef unsigned long long uint64;
 #endif
+//////////////////
 
+
+// types float32 //
+//       float64 //
 typedef float float32;
 typedef double float64;
+///////////////////
 
+
+// definitions of INFINITY //
+//            and NAN      //
 #ifdef OI_MSVC
 #pragma warning(disable : 4056)
 #pragma warning(disable : 4756)
@@ -51,5 +68,7 @@ typedef double float64;
 #ifndef NAN
 #define NAN (0.0/0.0)
 #endif
+/////////////////////////////
+
 
 #endif

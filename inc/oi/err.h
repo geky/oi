@@ -8,8 +8,9 @@ extern "C" {
 #endif
 
 
-// Reliable error values
+// Reliable error values //
 #ifdef OI_WIN
+
 enum {
     ERR_IN_USE              = ERROR_BUSY        ,
     ERR_TIMEOUT             = ERROR_TIMEOUT     ,
@@ -21,9 +22,11 @@ enum {
     ERR_UNREACHABLE_NET     = WSAENETUNREACH    ,
     ERR_DISCONNECTED        = WSAECONNRESET
 };
+
 #else
 #include <errno.h>
 #include <netdb.h>
+
 enum {
     ERR_IN_USE              = EBUSY             ,
     ERR_TIMEOUT             = ETIMEDOUT         ,
@@ -40,7 +43,9 @@ enum {
     ERR_UNREACHABLE_NET     = ENETUNREACH       ,
     ERR_DISCONNECTED        = ECONNRESET        
 };
+
 #endif
+///////////////////////////
 
 
 const char * get_error(int err);

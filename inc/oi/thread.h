@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// type thread_t
+// type thread_t //
 #ifdef OI_WIN
 typedef struct {
     HANDLE i;
@@ -24,6 +24,7 @@ typedef struct {
     void * data;
 } thread_t;
 #endif
+///////////////////
 
 
 oi_call thread_create(thread_t *, void (*routine)(void*), void * args);

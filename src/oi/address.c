@@ -1,5 +1,27 @@
 #include "oi/address.h"
 
+
+#ifdef OI_WIN
+#   define _OI_NET_INIT { \
+        WSADATA wsadata; int err; \
+        if((err = WSAStartup(MAKEWORD(2,2),&wsadata))) \
+            return err; }
+
+#   define _OI_NET_DEINIT \
+        if (WSACleanup()) return WSAGetLastError();
+
+#   define _OI_NET_ERR WSAGetLastError()
+#
+#else
+#   include <unistd.h>
+#   include <errno.h>
+#
+#   define _OI_NET_INIT
+#   define _OI_NET_DEINIT
+#   define _OI_NET_ERR errno
+#
+#endif
+
 #if defined(OI_IPV4)
 #   define _OI_AFAMILY AF_INET
 #elif defined(OI_IPV6)
@@ -9,7 +31,7 @@
 #endif
 
 #ifdef OI_WIN
-#define _OI_RGAI {_OI_NET_DEINIT; return err;}
+#   define _OI_RGAI {_OI_NET_DEINIT; return err;}
 #else
 #   if EAI_FAMILY < 0
 #       define _OI_RGAI return err;
@@ -17,6 +39,7 @@
 #       define _OI_RGAI return -err;
 #   endif
 #endif
+
 
 oi_call address_from_ipv4(address_t * a, void * ip, uint16 port) {
     a->ipv4.sin_family = AF_INET;

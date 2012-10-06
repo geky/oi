@@ -10,8 +10,7 @@ extern "C" {
 #endif
 
 
-// type cond_t
-
+// type cond_t //
 #ifdef OI_WIN
 #if WINVER >= 0x0600
 typedef CONDITION_VARIABLE cond_t;
@@ -27,6 +26,7 @@ typedef struct {
 #include <pthread.h>
 typedef pthread_cond_t cond_t;
 #endif
+/////////////////
 
 
 oi_call cond_create(cond_t *);

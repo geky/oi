@@ -9,14 +9,14 @@ extern "C" {
 #endif
 
 
-// type mutex_t;
-
+// type mutex_t //
 #ifdef OI_WIN
 typedef CRITICAL_SECTION mutex_t;
 #else
 #include <pthread.h>
 typedef pthread_mutex_t mutex_t;
 #endif
+//////////////////
 
 
 oi_call mutex_create(mutex_t*);

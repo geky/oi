@@ -19,9 +19,6 @@ const char * get_error(int err) {
 }
 
 #else
-
-#include <errno.h>
-#include <netdb.h>
 #include <string.h>
 
 const char * get_error(int err) {

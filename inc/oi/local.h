@@ -9,14 +9,14 @@ extern "C" {
 #endif
 
 
-// type local_t
-
+// type local_t //
 #ifdef OI_WIN
 typedef DWORD local_t;
 #else
 #include <pthread.h>
 typedef pthread_key_t local_t;
 #endif
+//////////////////
 
 
 oi_call local_create(local_t *);

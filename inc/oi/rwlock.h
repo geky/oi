@@ -9,8 +9,7 @@ extern "C" {
 #endif
 
 
-// type rwlock_t
-
+// type rwlock_t //
 #ifdef OI_WIN
 #if WINVER >= 0x0600
 typedef SRWLOCK rwlock_t;
@@ -26,6 +25,7 @@ typedef struct {
 #include <pthread.h>
 typedef pthread_rwlock_t rwlock_t;
 #endif
+///////////////////
 
 
 oi_call rwlock_create(rwlock_t*);
@@ -40,7 +40,6 @@ oi_call rwlock_read_unlock(rwlock_t*);
 
 oi_call rwlock_write_lock(rwlock_t*);
 
-// returns ERR_IN_USE on failure
 oi_call rwlock_try_write_lock(rwlock_t*);
 
 oi_call rwlock_write_unlock(rwlock_t*);

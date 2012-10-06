@@ -1,38 +1,43 @@
 #include "oi/socket.h"
 
+
 #ifdef OI_WIN
+#   define _OI_NET_INIT { \
+        WSADATA wsadata; int err; \
+        if((err = WSAStartup(MAKEWORD(2,2),&wsadata))) \
+            return err; }
+
+#   define _OI_NET_DEINIT \
+        if (WSACleanup()) return WSAGetLastError();
+
+#   define _OI_NET_ERR WSAGetLastError()
+#
+#
 #   define _OI_SERR_NOS WSAEAFNOSUPPORT
-#   define _OI_SERR_TIME ERROR_TIMEOUT
-#   define _OI_SERR_PROG WSAEWOULDBLOCK
-#   define _OI_SERR_CONN WSAEISCONN
-#   define _OI_SERR_DISC WSAECONNRESET
-#   define _OI_TIME_ERR (_OI_NET_ERR==WSAETIMEDOUT?_OI_SERR_TIME:_OI_NET_ERR)
 #   define _OI_SINVAL INVALID_SOCKET
+#
 #   define _OI_SCLOSE(sock) closesocket(sock)
 #   define _OI_SBLOCK(sock) { \
         u_long blk = 0; \
         if (ioctlsocket(sock,FIONBIO,&blk)) \
             _OI_SDIE(_OI_NET_ERR,s); \
-    } 
-#   define _OI_SUNBLOCK(sock) { \
-        u_long blk = 1; \
-        if (ioctlsocket(sock,FIONBIO,&blk)) \
-            _OI_SDIE(_OI_NET_ERR,s); \
     }
+#
 #else
+#   include <unistd.h>
+#   include <fcntl.h>
+#   include <errno.h>
+#
+#   define _OI_NET_INIT
+#   define _OI_NET_DEINIT
+#   define _OI_NET_ERR errno
+#
 #   define _OI_SERR_NOS EAFNOSUPPORT
-#   define _OI_SERR_TIME ETIMEDOUT
-#   define _OI_SERR_PROG EINPROGRESS
-#   define _OI_SERR_CONN EISCONN
-#   define _OI_SERR_DISC ECONNRESET
-#   define _OI_TIME_ERR _OI_NET_ERR
 #   define _OI_SINVAL -1
+#
 #   define _OI_SCLOSE(sock) close(sock)
 #   define _OI_SBLOCK(sock) \
         if (fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)&~O_NONBLOCK)) \
-            _OI_SDIE(_OI_NET_ERR,s);
-#   define _OI_SUNBLOCK(sock) \
-        if (fcntl(sock, F_SETFL, fcntl(sock, F_GETFL)|O_NONBLOCK)) \
             _OI_SDIE(_OI_NET_ERR,s);
 #endif
 
@@ -89,7 +94,6 @@
         addr->ipv4.sin_family = AF_INET; \
         memcpy(&addr->ipv4.sin_addr, &addr->ipv6.sin6_addr.s6_addr[12], 4); \
     }
-
 
 
 oi_call socket_create(socket_t * s, int proto, uint16 port) {

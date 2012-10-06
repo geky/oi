@@ -6,19 +6,24 @@
 #include "oi/types.h"
 #include "oi/net.h"
 
+#include <string.h>
+#ifndef OI_WIN
+#include <arpa/inet.h>
+#endif
+
 #ifdef OI_CPP
 extern "C" {
 #endif
 
 
-// type address_t
-
+// type address_t //
 typedef union {
     unsigned short family;
     struct sockaddr raw;
     struct sockaddr_in  ipv4;
     struct sockaddr_in6 ipv6;
 } address_t;
+////////////////////
 
 
 oi_call address_from_ipv4(address_t *, void * ip, uint16 port);

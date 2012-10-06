@@ -4,6 +4,8 @@
 #include "oi/os.h"
 #include "oi/types.h"
 
+#include <string.h>
+
 #ifdef OI_CPP
 extern "C" {
 #endif

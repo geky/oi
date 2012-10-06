@@ -7,27 +7,19 @@
 #include "oi/net.h"
 #include "oi/address.h"
 
+#include <string.h>
+
 #ifdef OI_CPP
 extern "C" {
 #endif
 
 
+// type socket_t //
 #ifdef OI_WIN
 typedef SOCKET _oi_sock;
 #else
 typedef signed int _oi_sock;
 #endif
-
-
-// Socket types
-
-enum {
-    SOCKET_UDP = SOCK_DGRAM,
-    SOCKET_TCP = SOCK_STREAM
-};
-
-
-// type socket_t
 
 #ifdef OI_SINGLESTACK
 typedef struct {
@@ -40,6 +32,15 @@ typedef union {
     _oi_sock ipv4;
 } socket_t;
 #endif
+///////////////////
+
+
+// Definitions of socket types //
+enum {
+    SOCKET_UDP = SOCK_DGRAM,
+    SOCKET_TCP = SOCK_STREAM
+};
+/////////////////////////////////
 
 
 oi_call socket_create(socket_t *, int proto, uint16 port);

@@ -1,7 +1,6 @@
 #include "oi/pack.h"
 
 #include <float.h>
-#include <string.h>
 
 #ifdef OI_WIN
 #include "winsock2.h"

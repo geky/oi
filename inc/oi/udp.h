@@ -8,6 +8,8 @@
 #include "oi/address.h"
 #include "oi/socket.h"
 
+#include <stdarg.h>
+
 #ifdef OI_CPP
 extern "C" {
 #endif
