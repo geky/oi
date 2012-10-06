@@ -7,11 +7,10 @@ do
     gcc ../src/oi/$FILE.c -I../inc -pthread -c -o "test"
 done
 
-
 if [ -f "test" ]
 then
-rm "test"
-echo -e "\n"
+    rm test
+    echo -e "\n"
 
 echo -e "compiling with OI_IPV4:"
 gcc ../src/oi/* test.c -I../inc -DOI_IPV4 -Wall -pthread -o "test"
@@ -26,10 +25,10 @@ gcc ../src/oi/* test.c -I../inc -Wall -pthread -o "test"
 
 if [ -f "test" ]
 then
-echo -e "\n"
+    echo -e "\n"
 
-./test $@
-rm test
+    ./test $@
+    rm test
 
 fi
 fi
