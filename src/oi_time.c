@@ -1,11 +1,8 @@
-#ifndef OI_TIME
-#define OI_TIME 1
-#include "oi_os.h"
-#include "oi_types.h"
+#include "oi_time.h"
 
 #ifdef OI_WIN
 
-oi_func uint64 millis(void) {
+uint64 millis(void) {
     FILETIME temp;
     uint64 ret;
     GetSystemTimeAsFileTime(&temp);
@@ -16,10 +13,9 @@ oi_func uint64 millis(void) {
 }
 
 #else
-
 #include <sys/time.h>
 
-oi_func uint64 millis(void) {
+uint64 millis(void) {
     struct timeval temp;
     uint64 ret;
 
@@ -29,7 +25,5 @@ oi_func uint64 millis(void) {
     ret += (temp.tv_usec/1000);
     return ret;
 }
-
-#endif
 
 #endif

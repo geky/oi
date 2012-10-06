@@ -49,12 +49,7 @@
 #   define OI_UNKNOWN_OS
 #endif
 
-#ifndef OI_MSVC
-#   define oi_func static inline
-#else
-#   define oi_func static __inline
-#endif
-#define oi_call oi_func int
+#define oi_call int
 
 #endif
 

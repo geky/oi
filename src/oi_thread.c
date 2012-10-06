@@ -1,17 +1,6 @@
-//requires -pthread on posix machines
-#ifndef OI_THREAD
-#define OI_THREAD 1
-#include "oi_os.h"
+#include "oi_thread.h"
 
 #ifdef OI_WIN
-
-#include <process.h>
-
-typedef struct {
-    HANDLE i;
-    void (*func)(void*);
-    void * data;
-} thread_t;
 
 static unsigned int __stdcall _oi_thread_handler(void * args) {
     (*((thread_t*)args)->func)(((thread_t*)args)->data);
@@ -52,19 +41,11 @@ oi_call thread_terminate(thread_t * t) {
 }
 
 #else
-
-#include <pthread.h>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <errno.h>
 
-typedef struct {
-    pthread_t i;
-    void (*func)(void*);
-    void * data;
-} thread_t;
-
-void * _oi_thread_handler(void * args) {
+static void * _oi_thread_handler(void * args) {
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, 0);
     (*((thread_t*)args)->func)(((thread_t*)args)->data);
     return 0;
@@ -112,6 +93,3 @@ oi_call thread_terminate(thread_t * t) {
 }
 
 #endif
-
-#endif
-

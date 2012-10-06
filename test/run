@@ -1,0 +1,4 @@
+#!/bin/bash
+
+#a quick script to test oi on linux machines
+gcc ../src/* test.c -I../inc -Wall -pthread -o test && ./test

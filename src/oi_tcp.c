@@ -1,16 +1,6 @@
-// requires -lws2_32 for windows
-#ifndef OI_TCP
-#define OI_TCP 1
-#include "oi_os.h"
-#include "oi_types.h"
-#include "oi_net.h"
-#include "oi_address.h"
-#include "oi_socket.h"
+#include "oi_tcp.h"
 
-// returns ERR_REFUSED if the reciever does not accept the connection.
-// returns ERR_UNREACHABLE_HOST if the end computer is not reachable.
-// returns ERR_UNREACHABLE_NET if the network containing the end computer is not reachable.
-// returns ERR_TIMEOUT if the connection times out
+
 oi_call tcp_connect(socket_t * s, address_t * a) {    
     if (a->family == AF_INET) {
 #if defined(OI_IPV4) || defined(OI_SINGLESTACK)
@@ -49,10 +39,7 @@ oi_call tcp_connect(socket_t * s, address_t * a) {
     }
 }
 
-// returns ERR_REFUSED if the reciever does not accept the connection.
-// returns ERR_UNREACHABLE_HOST if the end computer is not reachable.
-// returns ERR_UNREACHABLE_NET if the network containing the end computer is not reachable.
-// returns ERR_TIMEOUT if the connection times out
+
 oi_call tcp_connect_any(socket_t ** res_s, address_t ** res_a, unsigned int ms, int num, ...) {
     fd_set fset;
     struct timeval time, *timept=0;
@@ -218,6 +205,7 @@ oi_call tcp_connect_any(socket_t ** res_s, address_t ** res_a, unsigned int ms, 
     return err;
 }
 
+
 oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
     socklen_t na_s = sizeof(address_t);
     address_t dump;
@@ -274,7 +262,7 @@ oi_call tcp_accept(socket_t * s, socket_t * ns, address_t * na) {
 #endif
 }
 
-// returns ERR_TIMEOUT if the connection times out
+
 oi_call tcp_accept_any(socket_t ** res_s, socket_t * ns, address_t * na, unsigned int ms, int num, ...) {
     socklen_t na_s = sizeof(address_t);
     address_t dump;
@@ -355,8 +343,7 @@ oi_call tcp_accept_any(socket_t ** res_s, socket_t * ns, address_t * na, unsigne
     return _OI_SERR_TIME;
 }
 
-// returns ERR_DISCONNECTED if the socket is disconnected.
-// returns ERR_TIMEOUT if the connection times out.
+
 oi_call tcp_send(socket_t * s, void * buf, size_t * len) {
     size_t sendlen = *len;
     int newlen;
@@ -373,8 +360,7 @@ oi_call tcp_send(socket_t * s, void * buf, size_t * len) {
     return 0;
 }
 
-// returns ERR_DISCONNECTED if the socket is disconnected.
-// returns ERR_TIMEOUT if the connection times out.
+
 oi_call tcp_rec(socket_t * s, void * buf, size_t * len) {
     int newlen = *len;
     *len = 0;
@@ -389,8 +375,7 @@ oi_call tcp_rec(socket_t * s, void * buf, size_t * len) {
     return 0;
 }
 
-// returns ERR_DISCONNECTED if the socket is disconnected.
-// returns ERR_TIMEOUT if the connection times out.
+
 oi_call tcp_rec_any(socket_t ** res_s, void * buf, size_t * len, unsigned int ms, int num, ...) {
     int newlen = *len;
     socket_t * s;
@@ -460,6 +445,7 @@ oi_call tcp_rec_any(socket_t ** res_s, void * buf, size_t * len, unsigned int ms
     return _OI_SERR_TIME;
 }
 
+
 oi_call tcp_set_nodelay(socket_t * s, int val) {
 #if defined(OI_SINGLESTACK)    
     if (s->ipv4!=_OI_SINVAL && setsockopt(s->ipv4,
@@ -471,6 +457,7 @@ oi_call tcp_set_nodelay(socket_t * s, int val) {
         return _OI_NET_ERR;
     return 0;
 }
+
 
 oi_call tcp_set_keepalive(socket_t * s, int val) {
 #if defined(OI_SINGLESTACK)
@@ -484,7 +471,8 @@ oi_call tcp_set_keepalive(socket_t * s, int val) {
     return 0;
 }
 
-oi_func int tcp_get_nodelay(socket_t * s) {
+
+int tcp_get_nodelay(socket_t * s) {
     int val = 0;
     socklen_t lval = sizeof val;
 #if defined(OI_SINGLESTACK)
@@ -496,7 +484,8 @@ oi_func int tcp_get_nodelay(socket_t * s) {
     return val;
 }
 
-oi_func int tcp_get_keepalive(socket_t * s) {
+
+int tcp_get_keepalive(socket_t * s) {
     int val = 0;
     socklen_t lval = sizeof val;
 #if defined(OI_SINGLESTACK)
@@ -508,4 +497,3 @@ oi_func int tcp_get_keepalive(socket_t * s) {
     return val;
 }
 
-#endif

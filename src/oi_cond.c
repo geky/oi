@@ -1,13 +1,7 @@
-//requires -pthread in posix
-#ifndef OI_COND
-#define OI_COND 1
-#include "oi_os.h"
-#include "oi_mutex.h"
+#include "oi_cond.h"
 
 #ifdef OI_WIN
 #if WINVER >= 0x0600
-
-typedef CONDITION_VARIABLE cond_t;
 
 oi_call cond_create(cond_t * c) {
     InitializeConditionVariable(c);
@@ -22,7 +16,6 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
     return SleepConditionVariableCS(c,m,INFINITE) ? GetLastError() : 0;
 }
 
-// returns ERR_TIMEOUT on timeout
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     return SleepConditionVariableCS(c,m,ms) ? GetLastError() : 0;
 }
@@ -38,14 +31,6 @@ oi_call cond_signal_all(cond_t * c) {
 }
 
 #else 
-//homemade solution for windows before vista
-
-typedef struct {
-    HANDLE event;
-    CRITICAL_SECTION lock;
-    int unlocking;
-    int count;
-} cond_t;
 
 oi_call cond_create(cond_t * c) {
     c->count = 0;
@@ -83,7 +68,6 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
     }
 }
 
-// returns ERR_TIMEOUT on timeout
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     EnterCriticalSection(&c->lock);
     c->count++;
@@ -131,12 +115,8 @@ oi_call cond_signal_all(cond_t * c) {
 }
 
 #endif
-
 #else
-
 #include <sys/time.h>
-
-typedef pthread_cond_t cond_t;
 
 oi_call cond_create(cond_t * c) {
     return pthread_cond_init(c,0);
@@ -150,7 +130,6 @@ oi_call cond_wait(cond_t * c, mutex_t * m) {
     return pthread_cond_wait(c,m);
 }
 
-// returns ERR_TIMEOUT on timeout
 oi_call cond_timed_wait(cond_t * c, mutex_t * m, unsigned int ms) {
     struct timespec time;
     struct timeval temp;
@@ -170,7 +149,5 @@ oi_call cond_signal_one(cond_t * c) {
 oi_call cond_signal_all(cond_t * c) {
     return pthread_cond_broadcast(c);
 }
-
-#endif
 
 #endif

@@ -1,13 +1,7 @@
-// requires -pthread on posix machines
-#ifndef OI_RWLOCK
-#define OI_RWLOCK 1
-#include "oi_os.h"
+#include "oi_rwlock.h"
 
 #ifdef OI_WIN
-//use window's SRW for versions later than windows vista
 #if WINVER >= 0x0600
-
-typedef SRWLOCK rwlock_t;
 
 oi_call rwlock_create(rwlock_t * rw) {
     InitializeSRWLock(rw);
@@ -23,7 +17,6 @@ oi_call rwlock_read_lock(rwlock_t * rw) {
     return 0;
 }
 
-// returns ERR_IN_USE on failure
 oi_call rwlock_try_read_lock(rwlock_t * rw) {
     return TryAcquireSRWLockShared(rw) ? 0 : ERROR_BUSY;
 }
@@ -38,7 +31,6 @@ oi_call rwlock_write_lock(rwlock_t * rw) {
     return 0;
 }
 
-// returns ERR_IN_USE on failure
 oi_call rwlock_try_write_lock(rwlock_t * rw) {
     return TryAcquireSRWLockExclusive(rw) ? 0 : ERROR_BUSY;
 }
@@ -49,14 +41,6 @@ oi_call rwlock_write_unlock(rwlock_t * rw) {
 }
 
 #else
-//homemade code for when nothing else is available
-
-typedef struct {
-    CRITICAL_SECTION count_lock;
-    int count;
-    HANDLE count_event;
-    CRITICAL_SECTION write_lock;
-} rwlock_t;
 
 oi_call rwlock_create(rwlock_t * rw) {
     InitializeCriticalSection(&rw->count_lock);
@@ -80,7 +64,6 @@ oi_call rwlock_read_lock(rwlock_t * rw) {
     return 0;
 }
 
-// returns ERR_IN_USE on failure
 oi_call rwlock_try_read_lock(rwlock_t * rw) {
     if (!TryEnterCriticalSection(&rw->write_lock)) 
         return ERROR_BUSY;
@@ -110,7 +93,6 @@ oi_call rwlock_write_lock(rwlock_t * rw) {
     return 0;
 }
 
-// returns ERR_IN_USE on failure
 oi_call rwlock_try_write_lock(rwlock_t * rw) {
     if (!TryEnterCriticalSection(&rw->write_lock)) 
         return ERROR_BUSY;
@@ -132,9 +114,6 @@ oi_call rwlock_write_unlock(rwlock_t * rw) {
 
 #endif
 #else
-#include <pthread.h>
-
-typedef pthread_rwlock_t rwlock_t;
 
 oi_call rwlock_create(rwlock_t * rw) {
     return pthread_rwlock_init(rw,0);
@@ -148,7 +127,6 @@ oi_call rwlock_read_lock(rwlock_t * rw) {
     return pthread_rwlock_rdlock(rw);
 }
 
-// returns ERR_IN_USE on failure
 oi_call rwlock_try_read_lock(rwlock_t * rw) {
     return pthread_rwlock_tryrdlock(rw);
 }
@@ -161,7 +139,6 @@ oi_call rwlock_write_lock(rwlock_t * rw) {
     return pthread_rwlock_wrlock(rw);
 }
 
-// returns ERR_IN_USE on failure
 oi_call rwlock_try_write_lock(rwlock_t * rw) {
     return pthread_rwlock_trywrlock(rw);
 }
@@ -169,7 +146,5 @@ oi_call rwlock_try_write_lock(rwlock_t * rw) {
 oi_call rwlock_write_unlock(rwlock_t * rw) {
     return pthread_rwlock_unlock(rw);
 }
-
-#endif
 
 #endif

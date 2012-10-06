@@ -1,11 +1,5 @@
-// requires -lws2_32 for windows
-#ifndef OI_UDP
-#define OI_UDP 1
-#include "oi_os.h"
-#include "oi_types.h"
-#include "oi_net.h"
-#include "oi_address.h"
-#include "oi_socket.h"
+#include "oi_udp.h"
+
 
 oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
     int newlen = *len;
@@ -38,6 +32,7 @@ oi_call udp_send(socket_t * s, void * buf, size_t * len, address_t * a) {
 #endif
     }
 }
+
 
 oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
     socklen_t na_s = sizeof(address_t);
@@ -74,7 +69,7 @@ oi_call udp_rec(socket_t * s, void * buf, size_t * len, address_t * na) {
     return 0;
 }
 
-// returns ERR_TIMEOUT on timeout
+
 oi_call udp_rec_any(socket_t ** res, void * buf, size_t * len, address_t * na, unsigned int ms, int num, ...) {
     socklen_t na_s = sizeof(address_t);
     address_t dump;
@@ -143,5 +138,3 @@ oi_call udp_rec_any(socket_t ** res, void * buf, size_t * len, address_t * na, u
 
     return _OI_SERR_TIME;
 }
-
-#endif

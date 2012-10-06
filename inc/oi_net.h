@@ -1,9 +1,3 @@
-// you may define
-//    OI_IPV4_ONLY
-//    OI_IPV6_ONLY
-//    OI_DUALSTACK
-//    OI_SINGLESTACK
-// to control address IP version
 #ifndef OI_NET
 #define OI_NET 1
 #include "oi_os.h"
@@ -52,6 +46,12 @@
 #
 #endif
 
+// you may define
+//    OI_IPV4_ONLY
+//    OI_IPV6_ONLY
+//    OI_DUALSTACK
+//    OI_SINGLESTACK
+// to control IP version
 #if !defined(OI_SINGLESTACK) && !defined(OI_DUALSTACK) && !defined(OI_IPV4) && !defined(OI_IPV6)
 #ifdef IPV6_V6ONLY
 #   define OI_DUALSTACK

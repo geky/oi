@@ -1,9 +1,4 @@
-// requires -lws2_32 for windows
-#ifndef OI_ADDRESS
-#define OI_ADDRESS 1
-#include "oi_os.h"
-#include "oi_types.h"
-#include "oi_net.h"
+#include "oi_address.h"
 
 #if defined(OI_IPV4)
 #   define _OI_AFAMILY AF_INET
@@ -23,13 +18,6 @@
 #   endif
 #endif
 
-typedef union {
-    unsigned short family;
-    struct sockaddr raw;
-    struct sockaddr_in  ipv4;
-    struct sockaddr_in6 ipv6;
-} address_t;
-
 oi_call address_from_ipv4(address_t * a, void * ip, uint16 port) {
     a->ipv4.sin_family = AF_INET;
     a->ipv4.sin_port = htons(port);
@@ -47,8 +35,6 @@ oi_call address_from_ipv6(address_t * a, void * ip, uint16 port) {
     return 0;
 }
 
-// Returns ERR_NOT_FOUND if name is not found
-// Returns ERR_NO_DATA if name is found but has no data associated with it
 oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup) {
     struct addrinfo hint, *res;
     int err;
@@ -67,8 +53,6 @@ oi_call address_from_name(address_t * a, const char * s, uint16 port, int lookup
     return 0;
 }
 
-// Returns ERR_NOT_FOUND if name is not found
-// Returns ERR_NO_DATA if name is found but has no data associated with it
 oi_call address_from_name_all(address_t * a, size_t * len, const char * s, uint16 port, int lookup) {
     size_t t=0;
     struct addrinfo hint, *res, *hit;
@@ -135,7 +119,7 @@ oi_call address_name(address_t * a, char * s, size_t len, int lookup) {
     _OI_RGAI;
 }
 
-oi_func void * address_address(address_t * a, size_t * len) {
+void * address_address(address_t * a, size_t * len) {
     if (a->family == AF_INET) {
         if (len) *len = 4;
         return &a->ipv4.sin_addr;
@@ -145,8 +129,6 @@ oi_func void * address_address(address_t * a, size_t * len) {
     }
 }
 
-oi_func uint16 address_port(address_t * a) {
+uint16 address_port(address_t * a) {
     return ntohs(a->ipv4.sin_port);
 }
-
-#endif

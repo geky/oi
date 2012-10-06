@@ -1,7 +1,4 @@
-#ifndef OI_PACK
-#define OI_PACK 1
-#include "oi_os.h"
-#include "oi_types.h"
+#include "oi_pack.h"
 
 #include <float.h>
 #include <string.h>
@@ -12,73 +9,73 @@
 #include "netinet/in.h"
 #endif
 
-oi_func void pack(void * b, void * in, size_t inlen) {
+void pack(void * b, void * in, size_t inlen) {
     memcpy(b,in,inlen);
 }
 
-oi_func void unpack(void * b, void * out, size_t outlen) {
+void unpack(void * b, void * out, size_t outlen) {
     memcpy(out,b,outlen);
 }
 
-oi_func void pack8(void * b, uint8 in) {
+void pack8(void * b, uint8 in) {
     *(uint8*)b = in;
 }
 
-oi_func uint8 unpack8(void * b) {
+uint8 unpack8(void * b) {
     return *(uint8*)b;
 }
 
-oi_func void pack16(void * b, uint16 in) {
+void pack16(void * b, uint16 in) {
     *(uint16*)b = htons(in);
 }
 
-oi_func uint16 unpack16(void * b) {
+uint16 unpack16(void * b) {
     return ntohs(*(uint16*)b);
 }
 
-oi_func void pack32(void * b, uint32 in) {
+void pack32(void * b, uint32 in) {
     *(uint32*)b = htonl(in);
 }
 
-oi_func uint32 unpack32(void * b) {
+uint32 unpack32(void * b) {
     return ntohl(*(uint32*)b);
 }
 
-oi_func void pack64(void * b, uint64 in) {
+void pack64(void * b, uint64 in) {
     pack32(b,(uint32)(in>>32));
     pack32((uint32*)b+1,(uint32)in);
 }
 
-oi_func uint64 unpack64(void * b) {
+uint64 unpack64(void * b) {
     return ((uint64)unpack32(b)) << 32 | unpack32(((uint32*)b)+1);
 
 }
 
 //if the mantissa sizes matches IEEE specification it is most likely IEEE 754 
-// which is what we want
+//which is what we convert to
 
 #if defined(__STDC_IEC_559__) || ((__FLT_MANT_DIG__ == 24) && (__DBL_MANT_DIG__ == 53))
 
 //union hack to prevent type punning warning
-oi_func void packf32(void * b, float32 in) {
+void packf32(void * b, float32 in) {
     union {uint32 i; float32 f;} temp;
     temp.f = in;
     pack32(b,temp.i); 
 }
 
-oi_func float32 unpackf32(void * b) {
+float32 unpackf32(void * b) {
     union {uint32 i; float32 f;} temp;
     temp.i = unpack32(b);
     return temp.f;
 }
 
-oi_func void packf64(void * b, float64 in) {
+void packf64(void * b, float64 in) {
     union {uint64 i; float64 f;} temp;
     temp.f = in;
     pack64(b,temp.i);
 }
 
-oi_func float64 unpackf64(void * b) {
+float64 unpackf64(void * b) {
     union {uint64 i; float64 f;} temp;
     temp.i = unpack64(b);
     return temp.f;
@@ -86,7 +83,7 @@ oi_func float64 unpackf64(void * b) {
 
 #else
 
-oi_func void packf32(void * b, float32 in) {
+void packf32(void * b, float32 in) {
     int exp = 0;    
     uint32 temp = 0;
 
@@ -106,7 +103,7 @@ oi_func void packf32(void * b, float32 in) {
     pack32(b,temp);
 }
 
-oi_func float32 unpackf32(void * b) {
+float32 unpackf32(void * b) {
     int exp;
     float32 out;
     uint32 temp = unpack32(b);
@@ -126,7 +123,7 @@ oi_func float32 unpackf32(void * b) {
     return out;
 }
 
-oi_func void packf64(void * b, float64 in) {
+void packf64(void * b, float64 in) {
     int exp = 0;    
     uint64 temp = 0;
 
@@ -146,7 +143,7 @@ oi_func void packf64(void * b, float64 in) {
     pack64(b,temp);
 }
 
-oi_func float64 unpackf64(void * b) {
+float64 unpackf64(void * b) {
     int exp;
     float64 out;
     uint64 temp = unpack64(b);
@@ -165,7 +162,5 @@ oi_func float64 unpackf64(void * b) {
     if (temp & 0x8000000000000000ULL) out = -out;
     return out;
 }
-
-#endif
 
 #endif
