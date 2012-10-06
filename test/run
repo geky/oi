@@ -1,13 +1,35 @@
 #!/bin/bash
 #a quick script to test oi on machines with gcc
 
+for FILE in "address" "cond" "err" "local" "mutex" "pack" "rwlock" "socket" "tcp" "thread" "time" "udp"
+do
+    echo -e "compiling "$FILE".c:"
+    gcc ../src/oi/$FILE.c -I../inc -pthread -c -o "test"
+done
+
+
+if [ -f "test" ]
+then
+rm "test"
+echo -e "\n"
+
+echo -e "compiling with OI_IPV4:"
 gcc ../src/oi/* test.c -I../inc -DOI_IPV4 -Wall -pthread -o "test"
+echo -e "compiling with OI_IPV6:"
 gcc ../src/oi/* test.c -I../inc -DOI_IPV6 -Wall -pthread -o "test"
+echo -e "compiling with OI_SINGLESTACK:"
 gcc ../src/oi/* test.c -I../inc -DOI_SINGLESTACK -Wall -pthread -o "test"
+echo -e "compiling with OI_DUALSTACK:"
+gcc ../src/oi/* test.c -I../inc -DOI_DUALSTACK -Wall -pthread -o "test"
+echo -e "compiling test.c:"
 gcc ../src/oi/* test.c -I../inc -Wall -pthread -o "test"
 
-if [ -f "test" ] ; then
+if [ -f "test" ]
+then
+echo -e "\n"
 
-    ./test $@
+./test $@
+rm test
 
+fi
 fi
