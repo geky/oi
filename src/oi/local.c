@@ -15,7 +15,7 @@ oi_call local_set(local_t * i, void * val) {
     return TlsSetValue(*i,val) ? 0 : GetLastError();
 }
 
-oi_func void * local_get(local_t * i) {
+void * local_get(local_t * i) {
     return TlsGetValue(*i);
 }
 

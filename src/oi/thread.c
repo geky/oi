@@ -1,6 +1,8 @@
 #include "oi/thread.h"
 
 #ifdef OI_WIN
+#include <process.h>
+#include <errno.h>
 
 static unsigned int __stdcall _oi_thread_handler(void * args) {
     (*((thread_t*)args)->func)(((thread_t*)args)->data);

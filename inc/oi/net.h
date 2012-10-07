@@ -9,7 +9,7 @@
 
 #ifdef OI_WIN
 #   include <winsock2.h>
-//#   include <ws2tcpip.h>
+#   include <ws2tcpip.h>
 #
 #   if WINVER >= 0x0600 && !defined(IPV6_V6ONLY)
 #       define IPV6_V6ONLY 27
