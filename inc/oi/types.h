@@ -4,7 +4,7 @@
 #include "oi/os.h"
 
 #include <math.h>
-
+#include <float.h>
 
 // types int8   //
 //       uint8  //
