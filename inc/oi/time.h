@@ -9,6 +9,10 @@ extern "C" {
 #endif
 
 
+// oi_time provides a time related functions useful for time dependant code.
+
+
+// Returns the current time in milliseconds.
 uint64 millis(void);
 
 

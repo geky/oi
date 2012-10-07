@@ -6,6 +6,12 @@
 #include <math.h>
 #include <float.h>
 
+
+// oi_types contains the definitions of standard sized numeric types. 
+// It is identical to stdint.h but is available 
+// outside of C99's standard library.
+
+
 // types int8   //
 //       uint8  //
 //       int16  //

@@ -7,10 +7,17 @@
 extern "C" {
 #endif
 
+// oi_err contains error related code. 
+// It is not required for any file, but is useful for 
+// debugging and determining errors.
+//
+// the definitions below are of errors that can be relied upon during runtime. 
+// Other error codes should really only be used to debug a program and 
+// vary widely accross configurations.
+
 
 // Reliable error values //
 #ifdef OI_WIN
-
 enum {
     ERR_IN_USE              = ERROR_BUSY        ,
     ERR_TIMEOUT             = ERROR_TIMEOUT     ,
@@ -26,7 +33,6 @@ enum {
 #else
 #include <errno.h>
 #include <netdb.h>
-
 enum {
     ERR_IN_USE              = EBUSY             ,
     ERR_TIMEOUT             = ETIMEDOUT         ,
@@ -48,6 +54,8 @@ enum {
 ///////////////////////////
 
 
+// Returns a null-termintated, system provided error message 
+// for an error code returned by an oi_call.
 const char * get_error(int err);
 
 

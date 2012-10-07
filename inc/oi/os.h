@@ -1,12 +1,27 @@
 #ifndef OI_OS
 #define OI_OS 1
 
+
+// oi_os is the starting point for OI. 
+// It determines your compiling enviroment and sets up useful macros. 
+// It may be necessary for oi_os to be included before other files 
+// so oi_os can set up correctly.
+//
+// OI will probably work on other configurations, but they have 
+// not yet been tested; If you use oi on an untested enviroment and 
+// can confirm that it works, please add the definitions below and add
+// your changes to the github repo.
+
+
+// Definition of Language //
 #if defined(__cplusplus) 
 #   define OI_CPP
 #else
 #   define OI_C
 #endif
+////////////////////////////
 
+// Definition of Compiler //
 #if defined(_MSC_VER)
 #   define OI_MSVC
 #elif defined(__clang__)
@@ -17,7 +32,9 @@
 #   warning oi does not recognize compiler
 #   define OI_UNKNOWN_CC
 #endif
+////////////////////////////
 
+// Definition of Operating System //
 #if defined(_WIN32) || defined(__WIN32__)
 #   define OI_WIN
 #
@@ -48,7 +65,10 @@
 #   warning oi does not recognize OS
 #   define OI_UNKNOWN_OS
 #endif
+////////////////////////////////////
 
+// Definition of oi_call for functions //
 #define oi_call int
+/////////////////////////////////////////
 
 #endif
